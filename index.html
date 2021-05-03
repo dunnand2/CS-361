@@ -1,0 +1,38 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+</head>
+<body>
+  <h1>Weather App!</h1>
+  <div>
+      <h2>Current Conditions</h2>
+      <p id="Temp">Temperature: </p>
+      <p id="Wind">Wind: </p>
+  </div>
+  <img src="#" />
+  <script>
+    const currentTemp = document.getElementById("Temp");
+    const currentWind = document.getElementById("Wind");
+    const img = document.querySelector('img');
+    fetch('https://api.openweathermap.org/data/2.5/weather?q=Chicago&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(response) {
+            temp_fahrenheit = 1.8*(response.main.temp - 273) + 32;
+            wind_speed = response.wind.speed
+            currentTemp.textContent += ~~temp_fahrenheit.toString() + " fahrenheit";
+            currentWind.textContent += ~~wind_speed.toString() + "mph";
+            console.log(response)
+    }); 
+    /*fetch('https://api.giphy.com/v1/gifs/translate?api_key=Lp0xjfM8u9kZAv6h8WUvvKfRjMQbPJBK&s=cats', {mode: 'cors'})
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(response) {
+            console.log(response);
+    });*/
+  </script>
+</body>
+</html>
