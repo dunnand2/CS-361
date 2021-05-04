@@ -1,0 +1,36 @@
+nav {
+    border: black;
+    border-style: solid;
+}
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+.active {
+    background-color: #4CAF50;
+    color: white;
+}
+li {
+    border-bottom: 1px solid #555;
+    display: inline;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 4fr 1fr;
+}
+
+#main-content {
+    display: grid;
+    grid-template-rows: 1fr 5fr;
+}
+
+#nav-list {
+    text-align: justify;
+}
+#nav-list:after {
+    content: '';
+    display: inline-block;
+    width: 100%;
+}

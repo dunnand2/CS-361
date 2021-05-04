@@ -2,37 +2,33 @@
 <head>
   <meta charset="UTF-8">
   <title>Document</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>Weather App!</h1>
-  <div>
+  <div id="searchDiv">
+    <input id="searchForm" type="text" placeholder="Enter City Name">
+    <button id="Search">Search</button>
+  </div>
+  <div class="grid-container">
+    <div id="currentWeatherDiv">
       <h2>Current Conditions</h2>
       <p id="Temp">Temperature: </p>
       <p id="Wind">Wind: </p>
+    </div>
+    <div id="mainContent">
+      <nav>
+        <ul id="nav-list">
+          <li><a href="#" class="active">Daily</a></li>
+          <li><a href="#">Hourly</a></li>
+          <li><a href="#">10-Day</a></li>
+          <li><a href="#">Radar</a></li>
+        </ul>
+      </nav>
+    </div>
   </div>
+
   <img src="#" />
-  <script>
-    const currentTemp = document.getElementById("Temp");
-    const currentWind = document.getElementById("Wind");
-    const img = document.querySelector('img');
-    fetch('https://api.openweathermap.org/data/2.5/weather?q=Chicago&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(response) {
-            temp_fahrenheit = 1.8*(response.main.temp - 273) + 32;
-            wind_speed = response.wind.speed
-            currentTemp.textContent += ~~temp_fahrenheit.toString() + " fahrenheit";
-            currentWind.textContent += ~~wind_speed.toString() + "mph";
-            console.log(response)
-    }); 
-    /*fetch('https://api.giphy.com/v1/gifs/translate?api_key=Lp0xjfM8u9kZAv6h8WUvvKfRjMQbPJBK&s=cats', {mode: 'cors'})
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(response) {
-            console.log(response);
-    });*/
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
