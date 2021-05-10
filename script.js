@@ -55,7 +55,7 @@ searchButton.addEventListener("click", function(){
 });*/ 
 
 function getWindDirection(degree){
-    if (degree >= 337.5 && degree < 22.5){
+    if (degree >= 337.5 || degree < 22.5){
         return "North";
     }
     if (degree >= 22.5 && degree < 67.5){
@@ -112,7 +112,7 @@ function displayMainContent(response, activeTab) {
         displayHourlyContent(response);
     }
     else if(activeTab == "dailyTab"){
-        return;
+        displayDailyContent(response);
     }
 }
 
@@ -187,7 +187,7 @@ function displayHourlyContent(response) {
 
         let temperatureCell = document.createElement("td");
         let temperature = getHourlyTemperature(i, response);
-        let temperatureText = document.createTextNode(temperature.toString());
+        let temperatureText = document.createTextNode(~~temperature.toString());
         temperatureCell.appendChild(temperatureText);
         newRow.appendChild(temperatureCell);
 
@@ -203,6 +203,77 @@ function displayHourlyContent(response) {
 
         let rainCell = document.createElement("td");
         let rainText = document.createTextNode(getHourlyRainfall(i, response));
+        rainCell.appendChild(rainText);
+        newRow.appendChild(rainCell);
+
+        body.appendChild(newRow);
+    }
+    table.appendChild(body);
+    contentDiv.appendChild(table);
+}
+
+function displayDailyContent(response) {
+    let contentDiv = document.getElementById("mainContentContainer");
+    let table = document.createElement("table");
+    let header = document.createElement("thead");
+    let headerRow = document.createElement("tr");
+
+    let headerCell1 = document.createElement("th");
+    let headerText1 = document.createTextNode("Day");
+    headerCell1.appendChild(headerText1);
+    headerRow.appendChild(headerCell1);
+
+    let headerCell2 = document.createElement("th");
+    let headerText2 = document.createTextNode("Temperature");
+    headerCell2.appendChild(headerText2);
+    headerRow.appendChild(headerCell2);
+
+    let headerCell3 = document.createElement("th");
+    let headerText3 = document.createTextNode("Wind Speed");
+    headerCell3.appendChild(headerText3);
+    headerRow.appendChild(headerCell3);
+
+    let headerCell4 = document.createElement("th");
+    let headerText4 = document.createTextNode("Wind Direction");
+    headerCell4.appendChild(headerText4);
+    headerRow.appendChild(headerCell4);
+
+    let headerCell5 = document.createElement("th");
+    let headerText5 = document.createTextNode("Rain");
+    headerCell5.appendChild(headerText5);
+    headerRow.appendChild(headerCell5);
+
+    header.appendChild(headerRow);
+    table.appendChild(header);
+
+    let body = document.createElement("tbody");
+    for(i = 0; i < response.daily.length; i++){
+        let newRow = document.createElement("tr");
+
+        let timeCell = document.createElement("td");
+        let time = getDate(i, response);
+        let timeText = document.createTextNode(time);
+        timeCell.appendChild(timeText);
+        newRow.appendChild(timeCell);
+
+        let temperatureCell = document.createElement("td");
+        let temperature = getDailyTemperature(i, response);
+        let temperatureText = document.createTextNode(~~temperature.toString());
+        temperatureCell.appendChild(temperatureText);
+        newRow.appendChild(temperatureCell);
+
+        let windSpeedCell = document.createElement("td");
+        let windSpeedText = document.createTextNode(getDailyWindSpeed(i, response).toString());
+        windSpeedCell.appendChild(windSpeedText);
+        newRow.appendChild(windSpeedCell);
+
+        let windDirectionCell = document.createElement("td");
+        let windDirectionText = document.createTextNode(getDailyWindDirection(i, response));
+        windDirectionCell.appendChild(windDirectionText);
+        newRow.appendChild(windDirectionCell);
+
+        let rainCell = document.createElement("td");
+        let rainText = document.createTextNode(getDailyRainfall(i, response));
         rainCell.appendChild(rainText);
         newRow.appendChild(rainCell);
 
@@ -255,13 +326,28 @@ function clearMainContent() {
     document.getElementById("mainContentContainer").innerHTML = "";
 }
 
+function getDailyRainfall(day, response) {
+    return response.daily[day].weather[0].description.toProperCase();
+}
+
 function getHourlyRainfall(hour, response) {
-    return response.hourly[hour].weather[0].description;
+    return response.hourly[hour].weather[0].description.toProperCase();
 }
 
 function getHourlyTime(hour, response) {
     let unixTime = response.hourly[hour].dt;
     return convertTime(unixTime);
+}
+
+function getDate(day, response) {
+    let unixTime =response.daily[day].dt;
+    return convertDay(unixTime);    
+}
+
+function getDailyTemperature(day, response) {
+    let kelvinTemp = response.daily[day].temp.day;
+    let tempF = convertTemp(kelvinTemp);
+    return tempF;
 }
 
 function getHourlyTemperature(hour, response) {
@@ -270,9 +356,19 @@ function getHourlyTemperature(hour, response) {
     return tempF;
 }
 
+function getDailyWindSpeed(day, response) {
+    let windSpeed = response.daily[day].wind_speed;
+    return windSpeed;
+}
+
 function getHourlyWindSpeed(hour, response) {
     let windSpeed = response.hourly[hour].wind_speed;
     return windSpeed;
+}
+
+function getDailyWindDirection(day, response) {
+    let windDirection = response.daily[day].wind_deg;
+    return getWindDirection(windDegree);
 }
 
 function getHourlyWindDirection(hour, response) {
@@ -287,9 +383,26 @@ function convertTemp(kelvinTemp) {
 function convertTime(unixTime) {
     let date = new Date(unixTime * 1000);
     let hours = date.getHours();
-    let month = date.getMonth()
+    let month = convertMonth(date.getMonth());
     let day = date.getDate();
-    let formattedTime = month.toString() + day.toString() + hours.toString();
-    console.log(formattedTime);
+    let formattedTime = month + " " + day.toString() + ", "  + hours.toString() + ":00";
     return formattedTime;
 }
+
+function convertDay(unixTime) {
+    let date = new Date(unixTime * 1000);
+    let month = convertMonth(date.getMonth());
+    let day = date.getDate();
+    let formattedTime = month + " " + day.toString();
+    return formattedTime;
+}
+
+function convertMonth(month) {
+    months = ["January", "February", "March", "April", "May", "June", "July", "August", 
+    "September", "October", "November", "December"];
+    return months[month];
+}
+
+String.prototype.toProperCase = function () {
+    return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+};
