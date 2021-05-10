@@ -19,16 +19,21 @@ app.get('/', function (req, res, next){
 
 app.post('/', function (req, res, next) {
     (async () => {
-        const response = await fetch('https://en.wikipedia.org/wiki/Chicago');
+        city = req.body.city;
+        state = req.body.state;
+        city_url = 'https://en.wikipedia.org/wiki/' + city + ',_' + state;
+        const response = await fetch(city_url);
         const text = await response.text();
         const dom = await new JSDOM(text);
+        let content = dom.window.document.getElementById("content");
+        let mainImage = content.getElementsByTagName("img");
         let latitude = dom.window.document.getElementsByClassName("latitude")[0].textContent;
         let longitude = dom.window.document.getElementsByClassName("longitude")[0].textContent;
         body = JSON.stringify({
             lat: latitude.toString(),
-            long: longitude.toString()
+            long: longitude.toString(),
+            imageURL: mainImage[2].src
         });
-        res.setHeader("Test", "WOW!");
         res.setHeader("Access-Control-Allow-Origin", "http://web.engr.oregonstate.edu");
         res.setHeader("Access-Control-Allow-Headers", "*");
         res.send(body);
