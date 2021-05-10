@@ -64,21 +64,21 @@
     <button id="Search">Search</button>		
   </div>
   <div class="grid-container">
-    <div id="currentWeatherDiv">
-      <h2>Current Conditions</h2>
-      <p id="Temp">Temperature: </p>
-      <p id="Wind">Wind: </p>
-      <p id="WindDirection">Wind Direction: </p>
+    <div id="Weather-alerts">
+      <h2>Weather Alerts</h2> 
     </div>
     <div id="mainContent">
       <nav>
         <ul id="nav-list">
-          <li><a href="#" class="active">Daily</a></li>
-          <li><a href="#">Hourly</a></li>
-          <li><a href="#">10-Day</a></li>
-          <li><a href="#">Radar</a></li>
+          <li><button class="content-tab active" id="currentTab">Current</button></li>
+          <li><button class="content-tab" id="hourlyTab">Hourly</button></li>
+          <li><button class="content-tab" id="dailyTab"> Daily (7-Day)</button></li>
+          <li><button class="content-tab">Radar</button></li>
         </ul>
       </nav>
+      <div id="mainContentContainer">
+
+      </div>
     </div>
   </div>
 
