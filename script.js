@@ -174,6 +174,41 @@ function displayHourlyContent(response) {
 
     header.appendChild(headerRow);
     table.appendChild(header);
+
+    let body = document.createElement("tbody");
+    for(i = 0; i < 48; i++){
+        let newRow = document.createElement("tr");
+
+        let timeCell = document.createElement("td");
+        let time = getHourlyTime(i, response);
+        let timeText = document.createTextNode(time);
+        timeCell.appendChild(timeText);
+        newRow.appendChild(timeCell);
+
+        let temperatureCell = document.createElement("td");
+        let temperature = getHourlyTemperature(i, response);
+        let temperatureText = document.createTextNode(temperature.toString());
+        temperatureCell.appendChild(temperatureText);
+        newRow.appendChild(temperatureCell);
+
+        let windSpeedCell = document.createElement("td");
+        let windSpeedText = document.createTextNode(getHourlyWindSpeed(i, response).toString());
+        windSpeedCell.appendChild(windSpeedText);
+        newRow.appendChild(windSpeedCell);
+
+        let windDirectionCell = document.createElement("td");
+        let windDirectionText = document.createTextNode(getHourlyWindDirection(i, response));
+        windDirectionCell.appendChild(windDirectionText);
+        newRow.appendChild(windDirectionCell);
+
+        let rainCell = document.createElement("td");
+        let rainText = document.createTextNode(getHourlyRainfall(i, response));
+        rainCell.appendChild(rainText);
+        newRow.appendChild(rainCell);
+
+        body.appendChild(newRow);
+    }
+    table.appendChild(body);
     contentDiv.appendChild(table);
 }
 
@@ -188,7 +223,7 @@ function getActiveTab() {
 }
 
 function getCurrentTemp(response) {
-    tempFahrenheit = 1.8*(response.current.temp - 273) + 32;
+    tempFahrenheit = convertTemp(response.current.temp);
     return tempFahrenheit;
 }
 
@@ -218,4 +253,43 @@ function contentTabClicked(e) {
 
 function clearMainContent() {
     document.getElementById("mainContentContainer").innerHTML = "";
+}
+
+function getHourlyRainfall(hour, response) {
+    return response.hourly[hour].weather[0].description;
+}
+
+function getHourlyTime(hour, response) {
+    let unixTime = response.hourly[hour].dt;
+    return convertTime(unixTime);
+}
+
+function getHourlyTemperature(hour, response) {
+    let kelvinTemp = response.hourly[hour].temp;
+    let tempF = convertTemp(kelvinTemp);
+    return tempF;
+}
+
+function getHourlyWindSpeed(hour, response) {
+    let windSpeed = response.hourly[hour].wind_speed;
+    return windSpeed;
+}
+
+function getHourlyWindDirection(hour, response) {
+    let windDegree = response.hourly[hour].wind_deg;
+    return getWindDirection(windDegree);
+}
+
+function convertTemp(kelvinTemp) {
+    return 1.8*(kelvinTemp - 273) + 32;
+}
+
+function convertTime(unixTime) {
+    let date = new Date(unixTime * 1000);
+    let hours = date.getHours();
+    let month = date.getMonth()
+    let day = date.getDate();
+    let formattedTime = month.toString() + day.toString() + hours.toString();
+    console.log(formattedTime);
+    return formattedTime;
 }
