@@ -18,7 +18,7 @@ searchButton.addEventListener("click", function(){
     let cityValue = cityInput.value;
     let stateInput = document.getElementById("stateDropDown");
     let stateValue = stateInput.value;
-    /*let xhr = new XMLHttpRequest();
+    let xhr = new XMLHttpRequest();
     let payload = JSON.stringify({
         searchType: "City",
         city: cityValue,
@@ -27,10 +27,31 @@ searchButton.addEventListener("click", function(){
     const url = 'http://127.0.0.1:3000/';
     xhr.open("POST", url);
     xhr.setRequestHeader('Content-type', 'application/json');
-    xhr.send(payload);*/
+    xhr.onload = (e) => {
+        if (xhr.status == 200) {
+            let response = JSON.parse(xhr.responseText);
+            let locationImageURL = response.imageURL;
+            let lat = convertLatitude(response.lat);
+            let long = convertLongitude(response.long);
+            fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + lat + '&lon=' + long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(response) {
+                api_response = response; 
+                let activeTab = getActiveTab();
+                displayMainContent(response, activeTab);
+                writeAlerts(response);
+                displayImageContent(locationImageURL);
+    })
+        } else {
+            console.error(xhr.statusText)
+        }
+    }
+    xhr.send(payload);
 
 
-    fetch('https://api.openweathermap.org/data/2.5/onecall?lat=35.07&lon=-89.58&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
+    /*fetch('https://api.openweathermap.org/data/2.5/onecall?lat=35.07&lon=-89.58&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
     .then(function(response) {
         return response.json();
     })
@@ -40,7 +61,7 @@ searchButton.addEventListener("click", function(){
         displayMainContent(response, activeTab);
         console.log(response);
         writeAlerts(response);
-    })
+    })*/
 });    
 /*fetch('https://api.openweathermap.org/data/2.5/weather?q=Chicago&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
     .then(function(response) {
@@ -86,14 +107,14 @@ function writeAlerts(response) {
     if (response.alerts != undefined) {
         response.alerts.forEach(element => {
             let alertLocation = document.createElement("p");
-            let text = document.createTextNode(element.sender_name);
-            alertLocation.appendChild(text);
+            let alertLocationText = document.createTextNode(element.sender_name);
+            alertLocation.appendChild(alertLocationText);
             weatherAlerts.appendChild(alertLocation);
 
             let alertType = document.createElement("p");
-            text = document.createTextNode(element.event);
-            alertType.appendChild(text);
-            weatherAlerts.appendChild(alertLocation);
+            let alertTypeText = document.createTextNode(element.event);
+            alertType.appendChild(alertTypeText);
+            weatherAlerts.appendChild(alertType);
         });
     }
     else {
@@ -283,6 +304,13 @@ function displayDailyContent(response) {
     contentDiv.appendChild(table);
 }
 
+function displayImageContent(url) {
+    let imageDiv = document.getElementById("locationImage");
+    let cityImage = document.createElement('img'); 
+    cityImage.src = url;
+    imageDiv.appendChild(cityImage);
+}
+
 function getActiveTab() {
     let tabs = document.getElementsByClassName("content-tab");
     for (let i = 0; i < tabs.length; i++) {
@@ -291,6 +319,40 @@ function getActiveTab() {
             return tab.id;
         }
     }
+}
+
+function convertLatitude(latitude) {
+    let new_latitude = "";
+    if(latitude[latitude.length - 1] == "S") {
+        new_latitude += "-";
+    }
+    for(let i = 0; i < latitude.length; i++) {
+        if (latitude[i] == "°") {
+            new_latitude += '.';
+        } else if (latitude[i] == '′') {
+            return new_latitude
+        } else {
+            new_latitude += latitude[i]
+        }
+    }
+    return new_latitude;
+}
+
+function convertLongitude(longitude) {
+    let new_longitude = "";
+    if(longitude[longitude.length - 1] == "W") {
+        new_longitude += "-";
+    }
+    for(let i = 0; i < longitude.length; i++) {
+        if (longitude[i] == "°") {
+            new_longitude += '.';
+        } else if (longitude[i] == '′') {
+            return new_longitude
+        } else {
+            new_longitude += longitude[i]
+        }
+    }
+    return new_latitude;
 }
 
 function getCurrentTemp(response) {
