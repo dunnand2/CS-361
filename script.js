@@ -14,6 +14,7 @@ let currentActive = currentTab;
 let api_response = null;
 
 searchButton.addEventListener("click", function(){
+    clearAllContent();
     let cityInput = document.getElementById("searchForm");
     let cityValue = cityInput.value;
     let stateInput = document.getElementById("stateDropDown");
@@ -386,6 +387,20 @@ function contentTabClicked(e) {
 
 function clearMainContent() {
     document.getElementById("mainContentContainer").innerHTML = "";
+}
+
+function clearWeatherAlerts() {
+    document.getElementById("Weather-alerts").innerHTML = "";
+}
+
+function clearImage() {
+    document.getElementById("locationImage").innerHTML = "";
+}
+
+function clearAllContent() {
+    clearMainContent();
+    clearWeatherAlerts();
+    clearImage();
 }
 
 function getDailyRainfall(day, response) {
