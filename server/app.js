@@ -22,6 +22,7 @@ app.post('/', function (req, res, next) {
         city = req.body.city;
         state = req.body.state;
         city_url = 'https://en.wikipedia.org/wiki/' + city + ',_' + state;
+        console.log(city);
         const response = await fetch(city_url);
         const text = await response.text();
         const dom = await new JSDOM(text);
@@ -44,18 +45,12 @@ app.post('/', function (req, res, next) {
 app.post('/image-scraper', function (req, res, next) {
     (async () => {
         url = req.body.wikiURL;
-
-        city_url = 'https://en.wikipedia.org/wiki/' + city + ',_' + state;
         const response = await fetch(url);
         const text = await response.text();
         const dom = await new JSDOM(text);
         let content = dom.window.document.getElementById("mw-content-text");
         let mainImage = content.getElementsByTagName("img");
-        let latitude = dom.window.document.getElementsByClassName("latitude")[0].textContent;
-        let longitude = dom.window.document.getElementsByClassName("longitude")[0].textContent;
         body = JSON.stringify({
-            lat: latitude.toString(),
-            long: longitude.toString(),
             imageURL: mainImage[0].src
         });
         res.setHeader("Access-Control-Allow-Origin", "http://web.engr.oregonstate.edu");

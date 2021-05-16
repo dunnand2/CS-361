@@ -5,6 +5,7 @@ const searchButton = document.getElementById("Search");
 const currentTab = document.getElementById("currentTab");
 const hourlyTab = document.getElementById("hourlyTab");
 const dailyTab = document.getElementById("dailyTab");
+const testButton = document.getElementById("Test");
 
 currentTab.addEventListener("click", contentTabClicked);
 hourlyTab.addEventListener("click", contentTabClicked);
@@ -13,68 +14,55 @@ dailyTab.addEventListener("click", contentTabClicked);
 let currentActive = currentTab;
 let api_response = null;
 
-searchButton.addEventListener("click", function(){
+searchButton.addEventListener("click", searchButtonClicked);
+
+async function searchButtonClicked() {
     clearAllContent();
-    let cityInput = document.getElementById("searchForm");
-    let cityValue = cityInput.value;
-    let stateInput = document.getElementById("stateDropDown");
-    let stateValue = stateInput.value;
-    let xhr = new XMLHttpRequest();
+    let cityValue = getCityFormData();
+    let stateValue = getStateFormData();
     let payload = JSON.stringify({
         searchType: "City",
         city: cityValue,
         state: stateValue
     })
-    const url = 'http://127.0.0.1:3000/';
-    xhr.open("POST", url);
-    xhr.setRequestHeader('Content-type', 'application/json');
-    xhr.onload = (e) => {
-        if (xhr.status == 200) {
-            let response = JSON.parse(xhr.responseText);
-            let locationImageURL = response.imageURL;
-            let lat = convertLatitude(response.lat);
-            let long = convertLongitude(response.long);
-            fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + lat + '&lon=' + long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
-            .then(function(response) {
-                return response.json();
-            })
-            .then(function(response) {
-                api_response = response; 
-                let activeTab = getActiveTab();
-                displayMainContent(response, activeTab);
-                writeAlerts(response);
-                displayImageContent(locationImageURL);
-    })
-        } else {
-            console.error(xhr.statusText)
-        }
-    }
-    xhr.send(payload);
+    const serverURL = 'http://flip3.engr.oregonstate.edu:5555';
+    let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
+    let body =  await response.json();
+    let weatherData = await getWeatherData(body);
+    let locationImageURL = body.imageURL;
+    saveWeatherData(weatherData);
+    displayMainContent(weatherData, getActiveTab());
+    writeAlerts(weatherData);
+    displayImageContent(locationImageURL);
+}
+
+async function getWeatherData(scrapedResponse) {
+    let lat = convertLatitude(scrapedResponse.lat);
+    let long = convertLongitude(scrapedResponse.long);
+    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + lat + '&lon=' + long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
+    return weatherResponse.json();
+}
+
+function saveWeatherData(response) {
+    api_response = response;
+}
+
+testButton.addEventListener("click", transformFromURL);
+
+async function transformFromURL(){
+    let untransformed = 'https://cdn.searchenginejournal.com/wp-content/uploads/2019/07/the-essential-guide-to-using-images-legally-online-1520x800.png'
+    let uri = 'http://flip2.engr.oregonstate.edu:59835/api/services/imageTransformer';
+    let bodyData = new FormData();
+    bodyData.append('img', untransformed);
+    bodyData.append('transformation', 'saturation' ?? '');
+    let response = await fetch(uri, {method: 'POST', body: bodyData, mode: 'cors'});
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    console.log(response); 
+}
 
 
-    /*fetch('https://api.openweathermap.org/data/2.5/onecall?lat=35.07&lon=-89.58&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(response) {
-        api_response = response; 
-        let activeTab = getActiveTab();
-        displayMainContent(response, activeTab);
-        console.log(response);
-        writeAlerts(response);
-    })*/
-});    
-/*fetch('https://api.openweathermap.org/data/2.5/weather?q=Chicago&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'})
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(response) {
-        temp_fahrenheit = 1.8*(response.main.temp - 273) + 32;
-        wind_speed = response.wind.speed
-        currentTemp.textContent += ~~temp_fahrenheit.toString() + " fahrenheit";
-        currentWind.textContent += ~~wind_speed.toString() + "mph";
-        console.log(response)
-});*/ 
 
 function getWindDirection(degree){
     if (degree >= 337.5 || degree < 22.5){
@@ -101,6 +89,20 @@ function getWindDirection(degree){
     if (degree >= 292.5 && degree < 337.5) {
         return "Northwest";
     }
+}
+
+
+
+function getCityFormData() {
+    let cityInput = document.getElementById("searchForm");
+    let cityValue = cityInput.value;
+    return cityValue
+}
+
+function getStateFormData() {
+    let stateInput = document.getElementById("stateDropDown");
+    let stateValue = stateInput.value;
+    return stateValue
 }
 
 function writeAlerts(response) {
@@ -306,6 +308,7 @@ function displayDailyContent(response) {
 }
 
 function displayImageContent(url) {
+    console.log(url);
     let imageDiv = document.getElementById("locationImage");
     let cityImage = document.createElement('img'); 
     cityImage.src = url;
