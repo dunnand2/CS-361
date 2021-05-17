@@ -7,7 +7,7 @@ var express = require('express');
 
 var app = express();
 
-app.set('port', 3000);
+app.set('port', 35351);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(CORS());
@@ -35,7 +35,8 @@ app.post('/', function (req, res, next) {
             long: longitude.toString(),
             imageURL: mainImage[0].src
         });
-        res.setHeader("Access-Control-Allow-Origin", "http://web.engr.oregonstate.edu");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        //res.setHeader("Access-Control-Allow-Origin", "http://web.engr.oregonstate.edu");
         res.setHeader("Access-Control-Allow-Headers", "*");
         res.send(body);
       })()
@@ -53,7 +54,7 @@ app.post('/image-scraper', function (req, res, next) {
         body = JSON.stringify({
             imageURL: mainImage[0].src
         });
-        res.setHeader("Access-Control-Allow-Origin", "http://web.engr.oregonstate.edu");
+        res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Headers", "*");
         res.send(body);
       })()

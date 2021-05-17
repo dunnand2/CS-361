@@ -1,6 +1,3 @@
-const currentTemp = document.getElementById("Temp");
-const currentWind = document.getElementById("Wind");
-const currentWindDirection = document.getElementById("WindDirection");
 const searchButton = document.getElementById("Search");
 const currentTab = document.getElementById("currentTab");
 const hourlyTab = document.getElementById("hourlyTab");
@@ -16,6 +13,10 @@ let api_response = null;
 
 searchButton.addEventListener("click", searchButtonClicked);
 
+function addEventListeners() {
+
+}
+
 async function searchButtonClicked() {
     clearAllContent();
     let cityValue = getCityFormData();
@@ -25,15 +26,17 @@ async function searchButtonClicked() {
         city: cityValue,
         state: stateValue
     })
-    const serverURL = 'http://flip3.engr.oregonstate.edu:5555';
+    //const serverURL = 'http://127.0.0.1:35351/';
+    const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
     let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
     let body =  await response.json();
     let weatherData = await getWeatherData(body);
-    let locationImageURL = body.imageURL;
+    let untransformedURL = "http:" + body.imageURL;
+    let transformedURL = await transformFromURL(untransformedURL);
     saveWeatherData(weatherData);
     displayMainContent(weatherData, getActiveTab());
     writeAlerts(weatherData);
-    displayImageContent(locationImageURL);
+    displayImageContent(transformedURL);
 }
 
 async function getWeatherData(scrapedResponse) {
@@ -49,17 +52,18 @@ function saveWeatherData(response) {
 
 testButton.addEventListener("click", transformFromURL);
 
-async function transformFromURL(){
-    let untransformed = 'https://cdn.searchenginejournal.com/wp-content/uploads/2019/07/the-essential-guide-to-using-images-legally-online-1520x800.png'
-    let uri = 'http://flip2.engr.oregonstate.edu:59835/api/services/imageTransformer';
-    let bodyData = new FormData();
-    bodyData.append('img', untransformed);
-    bodyData.append('transformation', 'saturation' ?? '');
-    let response = await fetch(uri, {method: 'POST', body: bodyData, mode: 'cors'});
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+async function transformFromURL(untransformedURL){
+    const uri = 'http://flip2.engr.oregonstate.edu:59835/api/services/imageTransformer';
+    const body = new FormData();
+    let myTransformation = 'saturate';
+    body.append('img', untransformedURL);
+    body.append('transformation', myTransformation ?? '');
+    const req = await fetch(uri, {method: 'POST', body: body, mode: 'cors'});
+    if (!req.ok) {
+        throw new Error(`HTTP error! status: ${req.status}`);
       }
-    console.log(response); 
+    const response = await req.json();
+    return response.imgUrl; 
 }
 
 
