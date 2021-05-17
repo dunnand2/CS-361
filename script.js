@@ -1,20 +1,20 @@
-const searchButton = document.getElementById("Search");
-const currentTab = document.getElementById("currentTab");
-const hourlyTab = document.getElementById("hourlyTab");
-const dailyTab = document.getElementById("dailyTab");
-const testButton = document.getElementById("Test");
-
-currentTab.addEventListener("click", contentTabClicked);
-hourlyTab.addEventListener("click", contentTabClicked);
-dailyTab.addEventListener("click", contentTabClicked);
-
 let currentActive = currentTab;
 let api_response = null;
-
-searchButton.addEventListener("click", searchButtonClicked);
+addEventListeners();
+//requestRadarData();
 
 function addEventListeners() {
+    const searchButton = document.getElementById("Search");
+    const currentTab = document.getElementById("currentTab");
+    const hourlyTab = document.getElementById("hourlyTab");
+    const dailyTab = document.getElementById("dailyTab");
+    const testButton = document.getElementById("Test");
 
+    searchButton.addEventListener("click", searchButtonClicked);
+    currentTab.addEventListener("click", contentTabClicked);
+    hourlyTab.addEventListener("click", contentTabClicked);
+    dailyTab.addEventListener("click", contentTabClicked);
+    testButton.addEventListener("click", getRadarData);
 }
 
 async function searchButtonClicked() {
@@ -37,20 +37,82 @@ async function searchButtonClicked() {
     displayMainContent(weatherData, getActiveTab());
     writeAlerts(weatherData);
     displayImageContent(transformedURL);
+    getRadarData();
 }
 
 async function getWeatherData(scrapedResponse) {
     let lat = convertLatitude(scrapedResponse.lat);
     let long = convertLongitude(scrapedResponse.long);
+    console.log(lat);
     let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + lat + '&lon=' + long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
     return weatherResponse.json();
+}
+
+async function getRadarData() {
+    let data = await requestRadarData();
+    let stream = await data.body;
+    console.log(JSON.parse(JSON.stringify(stream)));
+}
+
+/*function requestRadarData() {
+    //let lat = convertLatitude(scrapedResponse.lat);
+    //let long = convertLongitude(scrapedResponse.long);
+    let x_tile = lon2tile(-87.627778, 3)
+    let y_tile = lat2tile(41.881944, 3);
+    let mymap = L.map('mainContentContainer').setView([41.881944, -87.627778], 7);
+    L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        maxZoom: 5,
+        id: 'mapbox/streets-v11',
+        tileSize: 512,
+        zoomOffset: -1,
+        accessToken: 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA'
+}).addTo(mymap);
+    L.tileLayer('https://tile.openweathermap.org/map/clouds_new/3/' + x_tile + '/' + y_tile +'.png?appid=26725991df4a07c7462c67cf12165745').addTo(mymap)
+    console.log(x_tile);
+    console.log(y_tile);
+}*/
+
+function requestRadarData() {
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
+    var map = new mapboxgl.Map({
+        container: 'mainContentContainer',
+        style: 'mapbox://styles/mapbox/light-v9',
+        zoom: 4,
+        center: [-87.622088, 41.878781]
+    });
+    
+    map.on('load', function(){
+      map.addLayer({
+        "id": "simple-tiles",
+        "type": "raster",
+        "source": {
+          "type": "raster",
+          "tiles": ["https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=874718354841f0e0250b4b06a05a971e"],
+          "tileSize": 256
+        },
+        "minzoom": 0,
+        "maxzoom": 22
+      });
+    });
+    var popup = L.popup()
+    .setLatLng([-87.622088, 41.878781])
+    .setContent("City, State")
+    .openOn(map);
+    
+}
+
+function lon2tile(lon,zoom) { 
+    return (Math.floor((lon+180)/360*Math.pow(2,zoom))); 
+}
+
+function lat2tile(lat,zoom) { 
+    return (Math.floor((1-Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2 *Math.pow(2,zoom))); 
 }
 
 function saveWeatherData(response) {
     api_response = response;
 }
-
-testButton.addEventListener("click", transformFromURL);
 
 async function transformFromURL(untransformedURL){
     const uri = 'http://flip2.engr.oregonstate.edu:59835/api/services/imageTransformer';
@@ -65,8 +127,6 @@ async function transformFromURL(untransformedURL){
     const response = await req.json();
     return response.imgUrl; 
 }
-
-
 
 function getWindDirection(degree){
     if (degree >= 337.5 || degree < 22.5){

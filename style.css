@@ -26,6 +26,10 @@ li {
     grid-template-rows: 1fr 5fr;
 }
 
+#mainContentContainer {
+    height: 720px;
+}
+
 #nav-list {
     text-align: justify;
 }
