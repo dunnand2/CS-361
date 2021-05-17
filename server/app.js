@@ -30,6 +30,7 @@ app.post('/', function (req, res, next) {
         let mainImage = content.getElementsByTagName("img");
         let latitude = dom.window.document.getElementsByClassName("latitude")[0].textContent;
         let longitude = dom.window.document.getElementsByClassName("longitude")[0].textContent;
+        console.log(latitude);
         body = JSON.stringify({
             lat: latitude.toString(),
             long: longitude.toString(),

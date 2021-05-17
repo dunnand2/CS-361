@@ -1,5 +1,7 @@
 let currentActive = currentTab;
 let api_response = null;
+let current_lat = null;
+let current_long = null;
 addEventListeners();
 //requestRadarData();
 
@@ -8,13 +10,14 @@ function addEventListeners() {
     const currentTab = document.getElementById("currentTab");
     const hourlyTab = document.getElementById("hourlyTab");
     const dailyTab = document.getElementById("dailyTab");
+    const radarTab = document.getElementById("radarTab")
     const testButton = document.getElementById("Test");
 
     searchButton.addEventListener("click", searchButtonClicked);
     currentTab.addEventListener("click", contentTabClicked);
     hourlyTab.addEventListener("click", contentTabClicked);
     dailyTab.addEventListener("click", contentTabClicked);
-    testButton.addEventListener("click", getRadarData);
+    radarTab.addEventListener("click", requestRadarData);
 }
 
 async function searchButtonClicked() {
@@ -37,49 +40,23 @@ async function searchButtonClicked() {
     displayMainContent(weatherData, getActiveTab());
     writeAlerts(weatherData);
     displayImageContent(transformedURL);
-    getRadarData();
 }
 
 async function getWeatherData(scrapedResponse) {
-    let lat = convertLatitude(scrapedResponse.lat);
-    let long = convertLongitude(scrapedResponse.long);
-    console.log(lat);
-    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + lat + '&lon=' + long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
+    current_lat = convertLatitude(scrapedResponse.lat);
+    current_long = convertLongitude(scrapedResponse.long);
+    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
     return weatherResponse.json();
 }
 
-async function getRadarData() {
-    let data = await requestRadarData();
-    let stream = await data.body;
-    console.log(JSON.parse(JSON.stringify(stream)));
-}
-
-/*function requestRadarData() {
-    //let lat = convertLatitude(scrapedResponse.lat);
-    //let long = convertLongitude(scrapedResponse.long);
-    let x_tile = lon2tile(-87.627778, 3)
-    let y_tile = lat2tile(41.881944, 3);
-    let mymap = L.map('mainContentContainer').setView([41.881944, -87.627778], 7);
-    L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-        maxZoom: 5,
-        id: 'mapbox/streets-v11',
-        tileSize: 512,
-        zoomOffset: -1,
-        accessToken: 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA'
-}).addTo(mymap);
-    L.tileLayer('https://tile.openweathermap.org/map/clouds_new/3/' + x_tile + '/' + y_tile +'.png?appid=26725991df4a07c7462c67cf12165745').addTo(mymap)
-    console.log(x_tile);
-    console.log(y_tile);
-}*/
-
 function requestRadarData() {
+    clearMainContent();
     mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
     var map = new mapboxgl.Map({
         container: 'mainContentContainer',
         style: 'mapbox://styles/mapbox/light-v9',
         zoom: 4,
-        center: [-87.622088, 41.878781]
+        center: [current_long, current_lat]
     });
     
     map.on('load', function(){
@@ -96,7 +73,7 @@ function requestRadarData() {
       });
     });
     var popup = L.popup()
-    .setLatLng([-87.622088, 41.878781])
+    .setLatLng([current_long, current_lat])
     .setContent("City, State")
     .openOn(map);
     
@@ -154,8 +131,6 @@ function getWindDirection(degree){
         return "Northwest";
     }
 }
-
-
 
 function getCityFormData() {
     let cityInput = document.getElementById("searchForm");
@@ -389,38 +364,29 @@ function getActiveTab() {
     }
 }
 
+function parseDMS(input) {
+    let parts = input.split(/[^\d\w]+/);
+    return ConvertDMSToDD(parts)
+}
+
+function ConvertDMSToDD(parts) {
+    let dd = 0;
+    for(let i = 0; i < parts.length - 1; i++) {
+        dd += parseInt(parts[i])/(60^i);
+    }
+    let direction = parts[-1];
+    if (direction == "S" || direction == "W") {
+        dd = dd * -1;
+    } // Don't do anything for N or E
+    return dd;
+}
+
 function convertLatitude(latitude) {
-    let new_latitude = "";
-    if(latitude[latitude.length - 1] == "S") {
-        new_latitude += "-";
-    }
-    for(let i = 0; i < latitude.length; i++) {
-        if (latitude[i] == "°") {
-            new_latitude += '.';
-        } else if (latitude[i] == '′') {
-            return new_latitude
-        } else {
-            new_latitude += latitude[i]
-        }
-    }
-    return new_latitude;
+    return parseDMS(latitude);
 }
 
 function convertLongitude(longitude) {
-    let new_longitude = "";
-    if(longitude[longitude.length - 1] == "W") {
-        new_longitude += "-";
-    }
-    for(let i = 0; i < longitude.length; i++) {
-        if (longitude[i] == "°") {
-            new_longitude += '.';
-        } else if (longitude[i] == '′') {
-            return new_longitude
-        } else {
-            new_longitude += longitude[i]
-        }
-    }
-    return new_latitude;
+    return parseDMS(longitude);
 }
 
 function getCurrentTemp(response) {
