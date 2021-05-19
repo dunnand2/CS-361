@@ -4,7 +4,9 @@ A weather web application that gets a weather report for a user entered city. A 
 Additionally, the image scraper can be utilized as a standalone service via an API request.
 
 # Requests
-The image scraper can be used by making a HTTP POST request to *enter server URL here*. The API accepts one parameter:
+The image scraper can be used by making a HTTP POST request to http://flip3.engr.oregonstate.edu:35351/api/image-scraper \
+\
+The API accepts one parameter:
 * wikiURL: The Wikipedia page to parse
 
 # Example Request
