@@ -13,3 +13,12 @@ The image scraper can be used by making a HTTP POST request to *enter server URL
 "wikiURL":"https://en.wikipedia.org/wiki/Chicago"
 }
 ```
+# Response
+The image scraper will return a direct link to the image from wikipedia.
+
+# Example Response
+```json
+{
+"imageURL":"//upload.wikimedia.org/wikipedia/commons/thumb/3/38/Chicago_montage1.jpg/300px-Chicago_montage1.jpg"
+}
+```
