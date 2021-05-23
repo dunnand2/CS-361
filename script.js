@@ -10,39 +10,48 @@ function addEventListeners() {
     const currentTab = document.getElementById("currentTab");
     const hourlyTab = document.getElementById("hourlyTab");
     const dailyTab = document.getElementById("dailyTab");
-    const radarTab = document.getElementById("radarTab")
+    const radarTab = document.getElementById("radarTab");
     const testButton = document.getElementById("Test");
 
     searchButton.addEventListener("click", searchButtonClicked);
     currentTab.addEventListener("click", contentTabClicked);
     hourlyTab.addEventListener("click", contentTabClicked);
     dailyTab.addEventListener("click", contentTabClicked);
-    radarTab.addEventListener("click", requestRadarData);
+    radarTab.addEventListener("click", contentTabClicked);
+    testButton.addEventListener("click", testButtonClicked);
+}
+
+async function testButtonClicked () {
+    const serverURL = 'http://flip3.engr.oregonstate.edu:35351/api/image-scraper';
+    let payload = JSON.stringify({wikiURL: "https://en.wikipedia.org/wiki/Chicago",})
+    let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
+    let body =  await response.json();
+    let untransformedURL = "http:" + body.imageURL;
+    displayImageContent(untransformedURL);
 }
 
 async function searchButtonClicked() {
     clearAllContent();
-    let cityValue = getCityFormData();
-    let stateValue = getStateFormData();
-    let payload = JSON.stringify({
-        searchType: "City",
-        city: cityValue,
-        state: stateValue
-    })
-    //const serverURL = 'http://127.0.0.1:35351/';
-    const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
+    let payload = createPayload();
+    const serverURL = 'http://127.0.0.1:35351/api';
+    //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
     let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
+    if (!response.ok) {
+        displayError(response);
+        return
+    }
     let body =  await response.json();
     let weatherData = await getWeatherData(body);
     let untransformedURL = "http:" + body.imageURL;
-    let transformedURL = await transformFromURL(untransformedURL);
+    //let transformedURL = await transformFromURL(untransformedURL);
     saveWeatherData(weatherData);
     displayMainContent(weatherData, getActiveTab());
     writeAlerts(weatherData);
-    displayImageContent(transformedURL);
+    displayImageContent(untransformedURL);
 }
 
 async function getWeatherData(scrapedResponse) {
+    console.log(scrapedResponse);
     current_lat = convertLatitude(scrapedResponse.lat);
     current_long = convertLongitude(scrapedResponse.long);
     let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
@@ -51,10 +60,36 @@ async function getWeatherData(scrapedResponse) {
 
 function requestRadarData() {
     clearMainContent();
+    console.log("current lat: " + current_lat);
+    console.log("current long: " +current_long);
+
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
+
+    /*var map = new mapboxgl.Map({
+        container: 'mainContentContainer',
+        style: 'mapbox://styles/mapbox/light-v10',
+        zoom: 4,
+        center: [-87.622088, 41.878781]
+    });
+    
+    map.on('load', function(){
+      map.addLayer({
+        "id": "simple-tiles",
+        "type": "raster",
+        "source": {
+          "type": "raster",
+          "tiles": ["https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=874718354841f0e0250b4b06a05a971e"],
+          "tileSize": 256
+        },
+        "minzoom": 0,
+        "maxzoom": 22
+      });
+    });*/
+
     mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
     var map = new mapboxgl.Map({
         container: 'mainContentContainer',
-        style: 'mapbox://styles/mapbox/light-v9',
+        style: 'mapbox://styles/mapbox/light-v10',
         zoom: 4,
         center: [current_long, current_lat]
     });
@@ -72,10 +107,7 @@ function requestRadarData() {
         "maxzoom": 22
       });
     });
-    var popup = L.popup()
-    .setLatLng([current_long, current_lat])
-    .setContent("City, State")
-    .openOn(map);
+
     
 }
 
@@ -97,12 +129,26 @@ async function transformFromURL(untransformedURL){
     let myTransformation = 'saturate';
     body.append('img', untransformedURL);
     body.append('transformation', myTransformation ?? '');
-    const req = await fetch(uri, {method: 'POST', body: body, mode: 'cors'});
-    if (!req.ok) {
-        throw new Error(`HTTP error! status: ${req.status}`);
-      }
-    const response = await req.json();
-    return response.imgUrl; 
+    try {
+        const req = await fetch(uri, {method: 'POST', body: body, mode: 'cors'});
+        if (!req.ok) {
+            throw new Error(`HTTP error! status: ${req.status}`);
+        }
+        const response = await req.json();
+        return response.imgUrl; 
+    } catch (e) {
+        return e.message;
+    }
+}
+
+function createPayload() {
+    let cityValue = getCityFormData();
+    let stateValue = getStateFormData();
+    return JSON.stringify({
+        searchType: "City",
+        city: cityValue,
+        state: stateValue
+    })
 }
 
 function getWindDirection(degree){
@@ -146,6 +192,10 @@ function getStateFormData() {
 
 function writeAlerts(response) {
     let weatherAlerts = document.getElementById("Weather-alerts");
+    let alertHeader = document.createElement("h2");
+    let alertHeaderText = document.createTextNode("Weather Alerts");
+    alertHeader.appendChild(alertHeaderText);
+    weatherAlerts.appendChild(alertHeader);
     if (response.alerts != undefined) {
         response.alerts.forEach(element => {
             let alertLocation = document.createElement("p");
@@ -177,6 +227,9 @@ function displayMainContent(response, activeTab) {
     else if(activeTab == "dailyTab"){
         displayDailyContent(response);
     }
+    else if(activeTab == "radarTab"){
+        requestRadarData();
+    }
 }
 
 function displayCurrentContent(response){
@@ -199,9 +252,22 @@ function displayCurrentContent(response){
     let windDirectionText = document.createTextNode(" Wind Direction: " + windDirection);
     currentWindDirection.appendChild(windDirectionText);
 
+    let currentIcon = getCurrentIcon(response);
+    let iconImage = document.createElement("img");
+    iconImage.src = currentIcon;
+
     contentDiv.appendChild(currentTemp);
     contentDiv.appendChild(currentWind);
     contentDiv.appendChild(currentWindDirection);
+    contentDiv.appendChild(iconImage);
+}
+
+function displayError(response) {
+    let contentDiv = document.getElementById("mainContentContainer");
+    let errorNode = document.createElement("p");
+    let errorText = document.createTextNode(response.status + " "  + response.statusText);
+    errorNode.appendChild(errorText);
+    contentDiv.appendChild(errorNode);
 }
 
 function displayHourlyContent(response) {
@@ -347,10 +413,15 @@ function displayDailyContent(response) {
 }
 
 function displayImageContent(url) {
-    console.log(url);
+    let cityValue = getCityFormData();
+    let stateValue = getStateFormData();
     let imageDiv = document.getElementById("locationImage");
+    let imageHeader = document.createElement('h2');
+    let imageHeaderText = document.createTextNode(cityValue + ', ' + stateValue);
+    imageHeader.appendChild(imageHeaderText);
     let cityImage = document.createElement('img'); 
     cityImage.src = url;
+    imageDiv.appendChild(imageHeader);
     imageDiv.appendChild(cityImage);
 }
 
@@ -372,21 +443,28 @@ function parseDMS(input) {
 function ConvertDMSToDD(parts) {
     let dd = 0;
     for(let i = 0; i < parts.length - 1; i++) {
-        dd += parseInt(parts[i])/(60^i);
+        dd += parseInt(parts[i])/(60**i);
     }
-    let direction = parts[-1];
+    let direction = parts.pop();
     if (direction == "S" || direction == "W") {
         dd = dd * -1;
     } // Don't do anything for N or E
+    console.log(dd);
     return dd;
 }
 
 function convertLatitude(latitude) {
+    console.log("unconverted lat: " + latitude);
     return parseDMS(latitude);
 }
 
 function convertLongitude(longitude) {
     return parseDMS(longitude);
+}
+
+function getCurrentIcon(response) {
+    iconURL = 'http://openweathermap.org/img/wn/' + response.current.weather[0].icon + '@2x.png'
+    return iconURL
 }
 
 function getCurrentTemp(response) {
@@ -412,9 +490,7 @@ function contentTabClicked(e) {
         currentActive = this;
         currentActive.classList.add('active');
         clearMainContent();
-        if(api_response != null) {
-            displayMainContent(api_response, getActiveTab());
-        }   
+        displayMainContent(api_response, getActiveTab());
     }
 }
 
