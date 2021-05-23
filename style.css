@@ -1,19 +1,47 @@
+.content-tab {
+    width: 24.7%;
+    position: relative;
+	display: inline-block;
+	padding: 1.2em 3em;
+	text-decoration: none;
+	text-align: center;
+	cursor: pointer;
+	user-select: none;
+	color: white;
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    opacity: 65%;
+}
+
+.active {
+    opacity: 100%;
+}
+
+div {
+    text-align: center;
+    margin: 20px;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
 nav {
-    border: black;
-    border-style: solid;
+    
 }
 ul {
     list-style-type: none;
-    margin: 0;
-    padding: 0;
+    margin: 0px;
+    padding: 0px;
 }
 .active {
     background-color: #4CAF50;
     color: white;
 }
 li {
-    border-bottom: 1px solid #555;
+
     display: inline;
+    margin: 0px;
+    padding: 0px;
 }
 
 .grid-container {
@@ -24,9 +52,11 @@ li {
 #main-content {
     display: grid;
     grid-template-rows: 1fr 5fr;
+
 }
 
 #mainContentContainer {
+
     height: 720px;
 }
 
