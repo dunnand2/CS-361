@@ -1,5 +1,14 @@
+a {
+    color: white;
+    font-family: sans-serif;
+}
 body {
     margin: 0px;
+    background: rgb(178, 204, 209);
+}
+
+h3 {
+    vertical-align: top;
 }
 
 .content-tab {
@@ -25,6 +34,20 @@ div {
     margin-top: 20px;
 }
 
+footer {
+    font-family: sans-serif;
+    color: white;
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+    width: 100%;
+    justify-content: space-evenly;
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    opacity: 85%;
+    align-items: center;
+    margin-top: 30px;
+}
+
 h1, h2 {
     text-align: center;
 }
@@ -47,9 +70,13 @@ li {
     padding: 0px;
 }
 
+.contentContainer {
+
+}
+
 .grid-container {
     display: grid;
-    grid-template-columns: 1fr 4fr 1fr;
+    grid-template-columns: 300px 4fr 300px;
 }
 
 #main-content {
@@ -59,7 +86,7 @@ li {
 }
 
 #mainContentContainer {
-    height: 720px;
+    height: 50vh;
 }
 
 #nav-list {
@@ -73,13 +100,19 @@ li {
 
 input[type='radio']l{   
     display: table-cell;
-    vertical-align: middle
+    vertical-align: middle;
+    float: right;
  }
 
 form {
+    border: 1px solid black;
+    margin: 5px;
+    padding: 5px;
+    background: white;
     display: flex;
     flex-direction: column;
     justify-content: right;
+    float: right;
 }
 #radioForm {
     position: absolute;
