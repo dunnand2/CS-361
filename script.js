@@ -2,6 +2,7 @@ let currentActive = currentTab;
 let api_response = null;
 let current_lat = null;
 let current_long = null;
+var map;
 addEventListeners();
 //requestRadarData();
 
@@ -11,14 +12,12 @@ function addEventListeners() {
     const hourlyTab = document.getElementById("hourlyTab");
     const dailyTab = document.getElementById("dailyTab");
     const radarTab = document.getElementById("radarTab");
-    const testButton = document.getElementById("Test");
 
     searchButton.addEventListener("click", searchButtonClicked);
     currentTab.addEventListener("click", contentTabClicked);
     hourlyTab.addEventListener("click", contentTabClicked);
     dailyTab.addEventListener("click", contentTabClicked);
     radarTab.addEventListener("click", contentTabClicked);
-    testButton.addEventListener("click", testButtonClicked);
 }
 
 async function testButtonClicked () {
@@ -33,7 +32,8 @@ async function testButtonClicked () {
 async function searchButtonClicked() {
     clearAllContent();
     let payload = createPayload();
-    const serverURL = 'http://localhost:35351/api';
+    const serverURL = 'http://127.0.0.1:35351/api';
+    //const serverURL = 'http://localhost:35351/api';
     //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
     let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
     if (!response.ok) {
@@ -43,26 +43,24 @@ async function searchButtonClicked() {
     let body =  await response.json();
     let weatherData = await getWeatherData(body);
     let untransformedURL = "http:" + body.imageURL;
-    //let transformedURL = await transformFromURL(untransformedURL);
+    let transformedURL = await transformFromURL(untransformedURL);
+    console.log(weatherData);
     saveWeatherData(weatherData);
     displayMainContent(weatherData, getActiveTab());
     writeAlerts(weatherData);
-    displayImageContent(untransformedURL);
+    displayImageContent(transformedURL);
 }
 
 async function getWeatherData(scrapedResponse) {
-    console.log(scrapedResponse);
+ 
     current_lat = convertLatitude(scrapedResponse.lat);
     current_long = convertLongitude(scrapedResponse.long);
     let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
     return weatherResponse.json();
 }
 
-function requestRadarData() {
+function createRadarData() {
     clearMainContent();
-    console.log("current lat: " + current_lat);
-    console.log("current long: " +current_long);
-
     mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
 
     /*var map = new mapboxgl.Map({
@@ -87,7 +85,7 @@ function requestRadarData() {
     });*/
 
     mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
-    var map = new mapboxgl.Map({
+    map = new mapboxgl.Map({
         container: 'mainContentContainer',
         style: 'mapbox://styles/mapbox/light-v10',
         zoom: 4,
@@ -95,20 +93,24 @@ function requestRadarData() {
     });
     
     map.on('load', function(){
-      map.addLayer({
+        addMapRadarLayer(map, "precipitation_new");
+    });
+
+    addRadioBox();
+}
+
+function addMapRadarLayer(map, layerType) {
+    map.addLayer({
         "id": "simple-tiles",
         "type": "raster",
         "source": {
           "type": "raster",
-          "tiles": ["https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=874718354841f0e0250b4b06a05a971e"],
+          "tiles": ["https://tile.openweathermap.org/map/" + layerType + "/{z}/{x}/{y}.png?appid=874718354841f0e0250b4b06a05a971e"],
           "tileSize": 256
         },
         "minzoom": 0,
         "maxzoom": 22
       });
-    });
-
-    addRadioBox();
 }
 
 function addRadioBox() {
@@ -123,9 +125,10 @@ function addRadioBox() {
     radioFormHeader.appendChild(radioFormHeaderText);
     
     const precipInput = createRadioButton('precipitation');
+    precipInput.checked = true;
     const precipLabel = createRadioLabel('precipitation');
     precipLabel.appendChild(precipInput);
-    const tempInput = createRadioButton('temperature');
+    const tempInput = createRadioButton('temp');
     const tempLabel = createRadioLabel('temperature');
     tempLabel.appendChild(tempInput);
     const pressureInput = createRadioButton('pressure');
@@ -137,6 +140,9 @@ function addRadioBox() {
     const windInput = createRadioButton('wind');
     const windLabel = createRadioLabel('wind');
     windLabel.appendChild(windInput);
+
+    const radioBoxes = [precipInput, tempInput, pressureInput, cloudInput, windInput];
+    radioBoxes.forEach(element => element.addEventListener('change', radarRadioClicked));
 
     radioForm.appendChild(precipLabel);
     radioForm.appendChild(tempLabel);
@@ -165,6 +171,14 @@ function createRadioLabel(buttonType) {
     return label
 }
 
+function radarRadioClicked(event) {
+    let radioBoxValue = event.target.value;
+    map.removeLayer('simple-tiles');
+    map.removeSource('simple-tiles');
+    addMapRadarLayer(map, radioBoxValue);
+}
+
+
 function lon2tile(lon,zoom) { 
     return (Math.floor((lon+180)/360*Math.pow(2,zoom))); 
 }
@@ -180,7 +194,7 @@ function saveWeatherData(response) {
 async function transformFromURL(untransformedURL){
     const uri = 'http://flip2.engr.oregonstate.edu:59835/api/services/imageTransformer';
     const body = new FormData();
-    let myTransformation = 'saturate';
+    let myTransformation = 'monochrome';
     body.append('img', untransformedURL);
     body.append('transformation', myTransformation ?? '');
     try {
@@ -246,7 +260,7 @@ function getStateFormData() {
 
 function writeAlerts(response) {
     let weatherAlerts = document.getElementById("Weather-alerts");
-    let alertHeader = document.createElement("h2");
+    let alertHeader = document.createElement("h3");
     let alertHeaderText = document.createTextNode("Weather Alerts");
     alertHeader.appendChild(alertHeaderText);
     weatherAlerts.appendChild(alertHeader);
@@ -282,7 +296,7 @@ function displayMainContent(response, activeTab) {
         displayDailyContent(response);
     }
     else if(activeTab == "radarTab"){
-        requestRadarData();
+        createRadarData();
     }
 }
 
@@ -470,7 +484,7 @@ function displayImageContent(url) {
     let cityValue = getCityFormData();
     let stateValue = getStateFormData();
     let imageDiv = document.getElementById("locationImage");
-    let imageHeader = document.createElement('h2');
+    let imageHeader = document.createElement('h3');
     let imageHeaderText = document.createTextNode(cityValue + ', ' + stateValue);
     imageHeader.appendChild(imageHeaderText);
     let cityImage = document.createElement('img'); 
@@ -503,12 +517,11 @@ function ConvertDMSToDD(parts) {
     if (direction == "S" || direction == "W") {
         dd = dd * -1;
     } // Don't do anything for N or E
-    console.log(dd);
     return dd;
 }
 
 function convertLatitude(latitude) {
-    console.log("unconverted lat: " + latitude);
+
     return parseDMS(latitude);
 }
 
