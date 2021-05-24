@@ -2,64 +2,57 @@ const fetch = require('isomorphic-fetch')
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 const http = require('http');
-var CORS = require('cors');
-var express = require('express');
+const CORS = require('cors');
+const corsOptions = {origin: '*'};
+const express = require('express');
 
-var app = express();
+const app = express();
 
 app.set('port', 35351);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(CORS());
+app.use(CORS(corsOptions));
 
 
-app.get('/', function (req, res, next){
+app.get('/api', function (req, res, next){
     res.send("Hello World");
 })
 
-app.post('/', function (req, res, next) {
+app.post('/api', function (req, res, next) {
     (async () => {
-        city = req.body.city;
-        state = req.body.state;
-        city_url = 'https://en.wikipedia.org/wiki/' + city + ',_' + state;
-        console.log(city);
-        const response = await fetch(city_url);
-        const text = await response.text();
-        const dom = await new JSDOM(text);
-        let content = dom.window.document.getElementById("mw-content-text");
-        let mainImage = content.getElementsByTagName("img");
-        let latitude = dom.window.document.getElementsByClassName("latitude")[0].textContent;
-        let longitude = dom.window.document.getElementsByClassName("longitude")[0].textContent;
-        console.log(latitude);
-        body = JSON.stringify({
-            lat: latitude.toString(),
-            long: longitude.toString(),
-            imageURL: mainImage[0].src
-        });
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        //res.setHeader("Access-Control-Allow-Origin", "http://web.engr.oregonstate.edu");
-        res.setHeader("Access-Control-Allow-Headers", "*");
-        res.send(body);
+        let cityURL = getCityURL(req);
+        let response = await fetch(cityURL);
+        if (!response.ok) {
+            return res.status(response.status).send({
+                message: response.statusText
+            });
+        } else{
+            let dom = await getWikipediaDOM(response);
+            let body = createResponseBody(dom);
+            res.send(body);
+        }
       })()
-
 });
 
-app.post('/image-scraper', function (req, res, next) {
+app.post('/api/image-scraper', function (req, res, next) {
     (async () => {
         url = req.body.wikiURL;
-        const response = await fetch(url);
-        const text = await response.text();
-        const dom = await new JSDOM(text);
-        let content = dom.window.document.getElementById("mw-content-text");
-        let mainImage = content.getElementsByTagName("img");
-        body = JSON.stringify({
-            imageURL: mainImage[0].src
-        });
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Headers", "*");
-        res.send(body);
+        let response = await fetch(url);
+        if (!response.ok) {
+            return res.status(response.status).send({
+                message: response.statusText
+            });
+        } else {
+            let text = await response.text();
+            let dom = await new JSDOM(text);
+            let content = dom.window.document.getElementById("mw-content-text");
+            let mainImage = content.getElementsByTagName("img");
+            body = JSON.stringify({
+                imageURL: mainImage[0].src
+            });
+            res.send(body);
+        }
       })()
-
 });
 
 app.use(function (req, res) {
@@ -73,6 +66,38 @@ app.use(function (err, req, res, next) {
     res.send('500');
 });
 
-app.listen(app.get('port'), function () {
+const server = app.listen(app.get('port'), function () {
     console.log('Express started on http://localhost:' + app.get('port') + '; press Ctrl-C to terminate.');
 });
+
+module.exports = server;
+
+
+function getCityURL (req) {
+    let city = req.body.city;
+    let state = req.body.state;
+    return 'https://en.wikipedia.org/wiki/' + city + ',_' + state;
+}
+
+async function getWikipediaDOM(response) {
+    let text = await response.text();
+    let dom = await new JSDOM(text);
+    return dom
+}
+
+function createResponseBody(dom) {
+    // Query the main content of the wikipedia article
+    let content = dom.window.document.getElementById("mw-content-text");
+    // Assign the URL of the first image. Since we queried the main content, this will be the most prominent image of the article
+    let mainImage = content.getElementsByTagName("img")[0];
+    // Access first coordinate element and access data (all elements should have the same data)
+    let latitude = dom.window.document.getElementsByClassName("latitude")[0].textContent;
+    let longitude = dom.window.document.getElementsByClassName("longitude")[0].textContent;
+    // package and return json data
+    let body = JSON.stringify({
+        lat: latitude.toString(),
+        long: longitude.toString(),
+        imageURL: mainImage.src
+    });
+    return body
+}

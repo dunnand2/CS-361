@@ -68,3 +68,8 @@ li {
     display: inline-block;
     width: 100%;
 }
+
+#radioForm {
+    position: absolute;
+    z-index: 1;
+}

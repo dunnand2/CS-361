@@ -108,7 +108,47 @@ function requestRadarData() {
       });
     });
 
+    addRadioBox();
+}
+
+function addRadioBox() {
+    const mainContentContainer = document.getElementById("mainContentContainer");
+    const radioForm = document.createElement('form');
+    radioForm.id = 'radioForm'
+
+    const radioFormHeader = document.createElement('p');
+    const radioFormHeaderText = document.createTextNode('Please select your preferred radar data:');
+    radioFormHeader.appendChild(radioFormHeaderText);
     
+    const precipInput = document.createElement('input');
+    precipInput.id = "precipitation";
+    precipInput.name = "precipitation";
+    precipInput.value = "precipitation_new";
+    precipInput.type = 'radio';
+
+    const precipLabel = document.createElement('label');
+    precipLabel.for = "precipitation";
+    const precipLabelText = document.createTextNode("Precipitation");
+    precipLabel.appendChild(precipLabelText);
+
+
+    const tempInput = document.createElement('input');
+    tempInput.id = "temperature";
+    tempInput.name = "temperature";
+    tempInput.value = "temperature_new";
+    tempInput.type = 'radio';
+
+    const tempLabel = document.createElement('label');
+    tempLabel.for = "temperature";
+    const tempLabelText = document.createTextNode("Temperature");
+    tempLabel.appendChild(tempLabelText);
+
+    radioForm.appendChild(precipInput)
+    radioForm.appendChild(precipLabel)
+    radioForm.appendChild(tempInput)
+    radioForm.appendChild(tempLabel)
+
+    mainContentContainer.appendChild(radioForm);
 }
 
 function lon2tile(lon,zoom) { 
