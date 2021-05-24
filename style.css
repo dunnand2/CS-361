@@ -1,3 +1,7 @@
+body {
+    margin: 0px;
+}
+
 .content-tab {
     width: 24.7%;
     position: relative;
@@ -18,7 +22,7 @@
 
 div {
     text-align: center;
-    margin: 20px;
+    margin-top: 20px;
 }
 
 h1, h2 {
@@ -38,7 +42,6 @@ ul {
     color: white;
 }
 li {
-
     display: inline;
     margin: 0px;
     padding: 0px;
@@ -56,7 +59,6 @@ li {
 }
 
 #mainContentContainer {
-
     height: 720px;
 }
 
@@ -69,6 +71,16 @@ li {
     width: 100%;
 }
 
+input[type='radio']l{   
+    display: table-cell;
+    vertical-align: middle
+ }
+
+form {
+    display: flex;
+    flex-direction: column;
+    justify-content: right;
+}
 #radioForm {
     position: absolute;
     z-index: 1;

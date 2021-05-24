@@ -33,7 +33,7 @@ async function testButtonClicked () {
 async function searchButtonClicked() {
     clearAllContent();
     let payload = createPayload();
-    const serverURL = 'http://127.0.0.1:35351/api';
+    const serverURL = 'http://localhost:35351/api';
     //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
     let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
     if (!response.ok) {
@@ -113,6 +113,8 @@ function requestRadarData() {
 
 function addRadioBox() {
     const mainContentContainer = document.getElementById("mainContentContainer");
+    const formDiv = document.createElement('div');
+    formDiv.id = "radioBoxDiv";
     const radioForm = document.createElement('form');
     radioForm.id = 'radioForm'
 
@@ -120,35 +122,47 @@ function addRadioBox() {
     const radioFormHeaderText = document.createTextNode('Please select your preferred radar data:');
     radioFormHeader.appendChild(radioFormHeaderText);
     
-    const precipInput = document.createElement('input');
-    precipInput.id = "precipitation";
-    precipInput.name = "precipitation";
-    precipInput.value = "precipitation_new";
-    precipInput.type = 'radio';
+    const precipInput = createRadioButton('precipitation');
+    const precipLabel = createRadioLabel('precipitation');
+    precipLabel.appendChild(precipInput);
+    const tempInput = createRadioButton('temperature');
+    const tempLabel = createRadioLabel('temperature');
+    tempLabel.appendChild(tempInput);
+    const pressureInput = createRadioButton('pressure');
+    const pressureLabel = createRadioLabel('pressure');
+    pressureLabel.appendChild(pressureInput);
+    const cloudInput = createRadioButton('clouds');
+    const cloudLabel = createRadioLabel('clouds');
+    cloudLabel.appendChild(cloudInput);
+    const windInput = createRadioButton('wind');
+    const windLabel = createRadioLabel('wind');
+    windLabel.appendChild(windInput);
 
-    const precipLabel = document.createElement('label');
-    precipLabel.for = "precipitation";
-    const precipLabelText = document.createTextNode("Precipitation");
-    precipLabel.appendChild(precipLabelText);
+    radioForm.appendChild(precipLabel);
+    radioForm.appendChild(tempLabel);
+    radioForm.appendChild(pressureLabel);
+    radioForm.appendChild(cloudLabel);
+    radioForm.appendChild(windLabel);
 
+    formDiv.appendChild(radioForm)
+    mainContentContainer.appendChild(formDiv);
+}
 
-    const tempInput = document.createElement('input');
-    tempInput.id = "temperature";
-    tempInput.name = "temperature";
-    tempInput.value = "temperature_new";
-    tempInput.type = 'radio';
+function createRadioButton(buttonType) {
+    const input = document.createElement('input');
+    input.id = buttonType;
+    input.name = 'radar';
+    input.value = buttonType + '_new';
+    input.type = 'radio'
+    return input
+}
 
-    const tempLabel = document.createElement('label');
-    tempLabel.for = "temperature";
-    const tempLabelText = document.createTextNode("Temperature");
-    tempLabel.appendChild(tempLabelText);
-
-    radioForm.appendChild(precipInput)
-    radioForm.appendChild(precipLabel)
-    radioForm.appendChild(tempInput)
-    radioForm.appendChild(tempLabel)
-
-    mainContentContainer.appendChild(radioForm);
+function createRadioLabel(buttonType) {
+    const label = document.createElement('label');
+    label.for = buttonType;
+    const labelText = document.createTextNode(buttonType.toProperCase())
+    label.appendChild(labelText);
+    return label
 }
 
 function lon2tile(lon,zoom) { 
