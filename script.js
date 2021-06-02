@@ -2,6 +2,8 @@ let currentActive = currentTab;
 let api_response = null;
 let current_lat = null;
 let current_long = null;
+let temperatureUnits;
+let windSpeedUnits;
 var map;
 addEventListeners();
 //requestRadarData();
@@ -32,16 +34,16 @@ async function testButtonClicked () {
 async function searchButtonClicked() {
     clearAllContent();
     let payload = createPayload();
-    const serverURL = 'http://127.0.0.1:35351/api';
-    //const serverURL = 'http://localhost:35351/api';
-    //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
+    let serverURL = getServerURL();
     let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
     if (!response.ok) {
         displayError(response);
         return
     }
-    let body =  await response.json();
-    let weatherData = await getWeatherData(body);
+    let body = await response.json();
+    let units = getUnitOfMeasurement();
+    setCurrentUnits(units);
+    let weatherData = await getWeatherData(body, units);
     let untransformedURL = "http:" + body.imageURL;
     let transformedURL = await transformFromURL(untransformedURL);
     console.log(weatherData);
@@ -51,39 +53,15 @@ async function searchButtonClicked() {
     displayImageContent(transformedURL);
 }
 
-async function getWeatherData(scrapedResponse) {
- 
+async function getWeatherData(scrapedResponse, units) {
     current_lat = convertLatitude(scrapedResponse.lat);
     current_long = convertLongitude(scrapedResponse.long);
-    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
+    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&units=' + units + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
     return weatherResponse.json();
 }
 
 function createRadarData() {
     clearMainContent();
-    mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
-
-    /*var map = new mapboxgl.Map({
-        container: 'mainContentContainer',
-        style: 'mapbox://styles/mapbox/light-v10',
-        zoom: 4,
-        center: [-87.622088, 41.878781]
-    });
-    
-    map.on('load', function(){
-      map.addLayer({
-        "id": "simple-tiles",
-        "type": "raster",
-        "source": {
-          "type": "raster",
-          "tiles": ["https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=874718354841f0e0250b4b06a05a971e"],
-          "tileSize": 256
-        },
-        "minzoom": 0,
-        "maxzoom": 22
-      });
-    });*/
-
     mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
     map = new mapboxgl.Map({
         container: 'mainContentContainer',
@@ -96,7 +74,7 @@ function createRadarData() {
         addMapRadarLayer(map, "precipitation_new");
     });
 
-    addRadioBox();
+    addRadarRadioBox();
 }
 
 function addMapRadarLayer(map, layerType) {
@@ -113,7 +91,7 @@ function addMapRadarLayer(map, layerType) {
       });
 }
 
-function addRadioBox() {
+function addRadarRadioBox() {
     const mainContentContainer = document.getElementById("mainContentContainer");
     const formDiv = document.createElement('div');
     formDiv.id = "radioBoxDiv";
@@ -301,17 +279,18 @@ function displayMainContent(response, activeTab) {
 }
 
 function displayCurrentContent(response){
+
     let contentDiv = document.getElementById("mainContentContainer");
     let currentHeader = document.createElement("h2");
     let headerText = document.createTextNode("Current Conditions");
     currentHeader.appendChild(headerText);
 
     let currentTemp = document.createElement("p");
-    let tempText = document.createTextNode("Temperature: " + ~~getCurrentTemp(response).toString() + " fahrenheit");
+    let tempText = document.createTextNode("Temperature: " + ~~getCurrentTemp(response).toString() + " " + temperatureUnits);
     currentTemp.appendChild(tempText);
 
     let currentWind = document.createElement("p");
-    let windSpeedText = document.createTextNode("Wind Speed: " + ~~getCurrentWindSpeed(response).toString() + " mph")
+    let windSpeedText = document.createTextNode("Wind Speed: " + ~~getCurrentWindSpeed(response).toString() + " " + windSpeedUnits);
     currentWind.appendChild(windSpeedText);
 
     let currentWindDirection = document.createElement("p");
@@ -365,7 +344,7 @@ function displayHourlyContent(response) {
     headerRow.appendChild(headerCell4);
 
     let headerCell5 = document.createElement("th");
-    let headerText5 = document.createTextNode("Rain");
+    let headerText5 = document.createTextNode("Conditions");
     headerCell5.appendChild(headerText5);
     headerRow.appendChild(headerCell5);
 
@@ -436,7 +415,7 @@ function displayDailyContent(response) {
     headerRow.appendChild(headerCell4);
 
     let headerCell5 = document.createElement("th");
-    let headerText5 = document.createTextNode("Rain");
+    let headerText5 = document.createTextNode("Conditions");
     headerCell5.appendChild(headerText5);
     headerRow.appendChild(headerCell5);
 
@@ -483,11 +462,12 @@ function displayDailyContent(response) {
 function displayImageContent(url) {
     let cityValue = getCityFormData();
     let stateValue = getStateFormData();
-    let imageDiv = document.getElementById("locationImage");
+    let imageDiv = document.getElementById("locationImageContainer");
     let imageHeader = document.createElement('h3');
     let imageHeaderText = document.createTextNode(cityValue + ', ' + stateValue);
     imageHeader.appendChild(imageHeaderText);
     let cityImage = document.createElement('img'); 
+    cityImage.id = 'locationImage';
     cityImage.src = url;
     imageDiv.appendChild(imageHeader);
     imageDiv.appendChild(cityImage);
@@ -535,13 +515,16 @@ function getCurrentIcon(response) {
 }
 
 function getCurrentTemp(response) {
-    tempFahrenheit = convertTemp(response.current.temp);
-    return tempFahrenheit;
+    return response.current.temp
 }
 
 function getCurrentWindSpeed(response) {
     windSpeed = response.current.wind_speed;
     return windSpeed;
+}
+
+function getTemperatureUnits() {
+
 }
 
 function getWindDegree(response) {
@@ -570,7 +553,7 @@ function clearWeatherAlerts() {
 }
 
 function clearImage() {
-    document.getElementById("locationImage").innerHTML = "";
+    document.getElementById("locationImageContainer").innerHTML = "";
 }
 
 function clearAllContent() {
@@ -629,6 +612,17 @@ function getHourlyWindDirection(hour, response) {
     return getWindDirection(windDegree);
 }
 
+function getServerURL() {
+    const serverURL = 'http://127.0.0.1:35351/api';
+    //const serverURL = 'http://localhost:35351/api';
+    //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
+    return serverURL
+}
+
+function getUnitOfMeasurement() {
+    return document.querySelector('input[name="units"]:checked').value
+}
+
 function convertTemp(kelvinTemp) {
     return 1.8*(kelvinTemp - 273) + 32;
 }
@@ -659,3 +653,20 @@ function convertMonth(month) {
 String.prototype.toProperCase = function () {
     return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 };
+
+function setCurrentUnits(units){
+    switch (units) {
+        case 'imperial':
+            temperatureUnits = String.fromCharCode(176) + 'F';
+            windSpeedUnits = 'Mph';
+            break;
+        case 'metric':
+            temperatureUnits = String.fromCharCode(176) + 'C';
+            windSpeedUnits = 'm/s';
+            break;
+        case 'standard':
+            temperatureUnits = 'K';
+            windSpeedUnits = 'm/s';
+            break;
+    }
+}

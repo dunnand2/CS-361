@@ -72,7 +72,14 @@
       <option value="Wisconsin">Wisconsin</option>
       <option value="Wyoming">Wyoming</option>
     </select>
-    <button id="Search">Search</button>		
+    <button id="Search">Search</button><br>	
+    <h2>Select your preferred units of measurement</h2>	
+    <input type="radio" id="imperial " name="units" value="imperial" checked>
+    <label for="imperial">Imperial</label>
+    <input type="radio" id="metric " name="units" value="metric">
+    <label for="metric">Metric</label>
+    <input type="radio" id="standard " name="units" value="standard">
+    <label for="units">Standard</label>
   </div>
   <div class="grid-container">
     <div id="Weather-alerts" class='contentContainer'> 
@@ -80,16 +87,16 @@
     <div id="mainContent">
       <nav>
         <ul id="nav-list">
-          <li><button class="content-tab active" id="currentTab">Current</button></li>
-          <li><button class="content-tab" id="hourlyTab">Hourly</button></li>
-          <li><button class="content-tab" id="dailyTab"> Daily (7-Day)</button></li>
-          <li><button class="content-tab" id="radarTab">Radar</button></li>
+          <li><button class="content-tab active" id="currentTab" title="Displays current weather">Current</button></li>
+          <li><button class="content-tab" id="hourlyTab" title="Displays hourly weather forecasts over the next 48-hours">Hourly</button></li>
+          <li><button class="content-tab" id="dailyTab" title="Displays daily weather forecasts over the next 7-days"> Daily (7-Day)</button></li>
+          <li><button class="content-tab" id="radarTab" title="Displays radar imagery of precipitation, temperature, clouds, wind speed, or pressure">Radar</button></li>
         </ul>
       </nav>
       <div id="mainContentContainer">
       </div>
     </div>
-    <div id="locationImage" class='contentContainer'>
+    <div id="locationImageContainer" class='contentContainer'>
 
     </div>
   </div>
