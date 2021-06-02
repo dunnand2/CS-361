@@ -3,6 +3,9 @@ let api_response = null;
 let current_lat = null;
 let current_long = null;
 var map;
+const contentDiv = getMainContentContainer();
+const requestHeaders = {'Accept': 'application/json', 'Content-Type': 'application/json'};
+
 addEventListeners();
 //requestRadarData();
 
@@ -23,7 +26,7 @@ function addEventListeners() {
 async function testButtonClicked () {
     const serverURL = 'http://flip3.engr.oregonstate.edu:35351/api/image-scraper';
     let payload = JSON.stringify({wikiURL: "https://en.wikipedia.org/wiki/Chicago",})
-    let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
+    let response = await fetch(serverURL, {method: 'POST', headers: requestHeaders, body: payload, mode: 'cors'});
     let body =  await response.json();
     let untransformedURL = "http:" + body.imageURL;
     displayImageContent(untransformedURL);
@@ -35,7 +38,7 @@ async function searchButtonClicked() {
     const serverURL = 'http://127.0.0.1:35351/api';
     //const serverURL = 'http://localhost:35351/api';
     //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
-    let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
+    let response = await fetch(serverURL, {method: 'POST', headers: requestHeaders, body: payload, mode: 'cors'});
     if (!response.ok) {
         displayError(response);
         return
@@ -44,7 +47,6 @@ async function searchButtonClicked() {
     let weatherData = await getWeatherData(body);
     let untransformedURL = "http:" + body.imageURL;
     let transformedURL = await transformFromURL(untransformedURL);
-    console.log(weatherData);
     saveWeatherData(weatherData);
     displayMainContent(weatherData, getActiveTab());
     writeAlerts(weatherData);
@@ -52,38 +54,18 @@ async function searchButtonClicked() {
 }
 
 async function getWeatherData(scrapedResponse) {
- 
+    // get lat and longitude from wikipedia HTML
     current_lat = convertLatitude(scrapedResponse.lat);
     current_long = convertLongitude(scrapedResponse.long);
-    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
+
+    // make API call with lat and long
+    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon='
+                         + current_long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
     return weatherResponse.json();
 }
 
 function createRadarData() {
     clearMainContent();
-    mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
-
-    /*var map = new mapboxgl.Map({
-        container: 'mainContentContainer',
-        style: 'mapbox://styles/mapbox/light-v10',
-        zoom: 4,
-        center: [-87.622088, 41.878781]
-    });
-    
-    map.on('load', function(){
-      map.addLayer({
-        "id": "simple-tiles",
-        "type": "raster",
-        "source": {
-          "type": "raster",
-          "tiles": ["https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=874718354841f0e0250b4b06a05a971e"],
-          "tileSize": 256
-        },
-        "minzoom": 0,
-        "maxzoom": 22
-      });
-    });*/
-
     mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
     map = new mapboxgl.Map({
         container: 'mainContentContainer',
@@ -114,44 +96,39 @@ function addMapRadarLayer(map, layerType) {
 }
 
 function addRadioBox() {
-    const mainContentContainer = document.getElementById("mainContentContainer");
-    const formDiv = document.createElement('div');
-    formDiv.id = "radioBoxDiv";
+    const formDiv = createRadioFormDiv()
+    const radioForm = createRadioForm()
+    addRadioItems(radioForm);
+    formDiv.appendChild(radioForm)
+    contentDiv.appendChild(formDiv);
+}
+
+function addRadioItems(radiobox) {
+    let buttons = ['precipitation', 'temp', 'pressure', 'clouds', 'wind'];
+    let labels = ['precipitation', 'temperature', 'pressure', 'clouds', 'wind'];
+    
+    for(let i = 0; i < buttons.length; i++ ) {
+        let input = createRadioButton(buttons[i]);
+        let label = createRadioLabel(labels[i]);
+        if(i == 0) {
+            input.checked = true;
+        }
+        label.append(input);
+        input.addEventListener('change', radarRadioClicked);
+        radiobox.appendChild(label);
+    }
+}
+
+function createRadioForm() {
     const radioForm = document.createElement('form');
     radioForm.id = 'radioForm'
+    return radioForm
+}
 
-    const radioFormHeader = document.createElement('p');
-    const radioFormHeaderText = document.createTextNode('Please select your preferred radar data:');
-    radioFormHeader.appendChild(radioFormHeaderText);
-    
-    const precipInput = createRadioButton('precipitation');
-    precipInput.checked = true;
-    const precipLabel = createRadioLabel('precipitation');
-    precipLabel.appendChild(precipInput);
-    const tempInput = createRadioButton('temp');
-    const tempLabel = createRadioLabel('temperature');
-    tempLabel.appendChild(tempInput);
-    const pressureInput = createRadioButton('pressure');
-    const pressureLabel = createRadioLabel('pressure');
-    pressureLabel.appendChild(pressureInput);
-    const cloudInput = createRadioButton('clouds');
-    const cloudLabel = createRadioLabel('clouds');
-    cloudLabel.appendChild(cloudInput);
-    const windInput = createRadioButton('wind');
-    const windLabel = createRadioLabel('wind');
-    windLabel.appendChild(windInput);
-
-    const radioBoxes = [precipInput, tempInput, pressureInput, cloudInput, windInput];
-    radioBoxes.forEach(element => element.addEventListener('change', radarRadioClicked));
-
-    radioForm.appendChild(precipLabel);
-    radioForm.appendChild(tempLabel);
-    radioForm.appendChild(pressureLabel);
-    radioForm.appendChild(cloudLabel);
-    radioForm.appendChild(windLabel);
-
-    formDiv.appendChild(radioForm)
-    mainContentContainer.appendChild(formDiv);
+function createRadioFormDiv() {
+    const formDiv = document.createElement('div');
+    formDiv.id = "radioBoxDiv";
+    return formDiv
 }
 
 function createRadioButton(buttonType) {
@@ -364,8 +341,9 @@ function displayHourlyContent(response) {
     headerCell4.appendChild(headerText4);
     headerRow.appendChild(headerCell4);
 
+    // Display hourly weather conditions
     let headerCell5 = document.createElement("th");
-    let headerText5 = document.createTextNode("Rain");
+    let headerText5 = document.createTextNode("Condition");
     headerCell5.appendChild(headerText5);
     headerRow.appendChild(headerCell5);
 
@@ -409,7 +387,7 @@ function displayHourlyContent(response) {
     contentDiv.appendChild(table);
 }
 
-function displayDailyContent(response) {
+function displayDailyContent(response.s) {
     let contentDiv = document.getElementById("mainContentContainer");
     let table = document.createElement("table");
     let header = document.createElement("thead");
@@ -547,6 +525,10 @@ function getCurrentWindSpeed(response) {
 function getWindDegree(response) {
     windDegree = response.current.wind_deg;
     return windDegree;
+}
+
+function getMainContentContainer() {
+    return document.getElementById("mainContentContainer");
 }
 
 function contentTabClicked(e) {
