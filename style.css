@@ -27,6 +27,7 @@ h3 {
 
 .active {
     opacity: 100%;
+    font-weight: bold;
 }
 
 div {
@@ -52,9 +53,10 @@ h1, h2 {
     text-align: center;
 }
 
-nav {
-    
+td {
+    text-align: center;
 }
+
 ul {
     list-style-type: none;
     margin: 0px;
@@ -79,6 +81,10 @@ li {
     grid-template-columns: 300px 4fr 300px;
 }
 
+#locationImage {
+    max-width: 250px;
+}
+
 #main-content {
     display: grid;
     grid-template-rows: 1fr 5fr;
@@ -87,6 +93,7 @@ li {
 
 #mainContentContainer {
     height: 50vh;
+    overflow: auto;
 }
 
 #nav-list {

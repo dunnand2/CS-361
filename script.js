@@ -2,6 +2,8 @@ let currentActive = currentTab;
 let api_response = null;
 let current_lat = null;
 let current_long = null;
+let temperatureUnits;
+let windSpeedUnits;
 var map;
 const contentDiv = getMainContentContainer();
 const requestHeaders = {'Accept': 'application/json', 'Content-Type': 'application/json'};
@@ -32,19 +34,24 @@ async function testButtonClicked () {
     displayImageContent(untransformedURL);
 }
 
-async function searchButtonClicked() {
-    clearAllContent();
     let payload = createPayload();
+<<<<<<< HEAD
     const serverURL = 'http://127.0.0.1:35351/api';
     //const serverURL = 'http://localhost:35351/api';
     //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
     let response = await fetch(serverURL, {method: 'POST', headers: requestHeaders, body: payload, mode: 'cors'});
+=======
+    let serverURL = getServerURL();
+    let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
+>>>>>>> fc69e0c525e881136581f6a8235af56e7034e783
     if (!response.ok) {
         displayError(response);
         return
     }
-    let body =  await response.json();
-    let weatherData = await getWeatherData(body);
+    let body = await response.json();
+    let units = getUnitOfMeasurement();
+    setCurrentUnits(units);
+    let weatherData = await getWeatherData(body, units);
     let untransformedURL = "http:" + body.imageURL;
     let transformedURL = await transformFromURL(untransformedURL);
     saveWeatherData(weatherData);
@@ -53,6 +60,7 @@ async function searchButtonClicked() {
     displayImageContent(transformedURL);
 }
 
+<<<<<<< HEAD
 async function getWeatherData(scrapedResponse) {
     // get lat and longitude from wikipedia HTML
     current_lat = convertLatitude(scrapedResponse.lat);
@@ -61,6 +69,12 @@ async function getWeatherData(scrapedResponse) {
     // make API call with lat and long
     let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon='
                          + current_long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
+=======
+async function getWeatherData(scrapedResponse, units) {
+    current_lat = convertLatitude(scrapedResponse.lat);
+    current_long = convertLongitude(scrapedResponse.long);
+    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&units=' + units + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
+>>>>>>> fc69e0c525e881136581f6a8235af56e7034e783
     return weatherResponse.json();
 }
 
@@ -78,7 +92,7 @@ function createRadarData() {
         addMapRadarLayer(map, "precipitation_new");
     });
 
-    addRadioBox();
+    addRadarRadioBox();
 }
 
 function addMapRadarLayer(map, layerType) {
@@ -95,6 +109,7 @@ function addMapRadarLayer(map, layerType) {
       });
 }
 
+<<<<<<< HEAD
 function addRadioBox() {
     const formDiv = createRadioFormDiv()
     const radioForm = createRadioForm()
@@ -102,6 +117,14 @@ function addRadioBox() {
     formDiv.appendChild(radioForm)
     contentDiv.appendChild(formDiv);
 }
+=======
+function addRadarRadioBox() {
+    const mainContentContainer = document.getElementById("mainContentContainer");
+    const formDiv = document.createElement('div');
+    formDiv.id = "radioBoxDiv";
+    const radioForm = document.createElement('form');
+    radioForm.id = 'radioForm'
+>>>>>>> fc69e0c525e881136581f6a8235af56e7034e783
 
 function addRadioItems(radiobox) {
     let buttons = ['precipitation', 'temp', 'pressure', 'clouds', 'wind'];
@@ -278,17 +301,18 @@ function displayMainContent(response, activeTab) {
 }
 
 function displayCurrentContent(response){
+
     let contentDiv = document.getElementById("mainContentContainer");
     let currentHeader = document.createElement("h2");
     let headerText = document.createTextNode("Current Conditions");
     currentHeader.appendChild(headerText);
 
     let currentTemp = document.createElement("p");
-    let tempText = document.createTextNode("Temperature: " + ~~getCurrentTemp(response).toString() + " fahrenheit");
+    let tempText = document.createTextNode("Temperature: " + ~~getCurrentTemp(response).toString() + " " + temperatureUnits);
     currentTemp.appendChild(tempText);
 
     let currentWind = document.createElement("p");
-    let windSpeedText = document.createTextNode("Wind Speed: " + ~~getCurrentWindSpeed(response).toString() + " mph")
+    let windSpeedText = document.createTextNode("Wind Speed: " + ~~getCurrentWindSpeed(response).toString() + " " + windSpeedUnits);
     currentWind.appendChild(windSpeedText);
 
     let currentWindDirection = document.createElement("p");
@@ -343,7 +367,11 @@ function displayHourlyContent(response) {
 
     // Display hourly weather conditions
     let headerCell5 = document.createElement("th");
+<<<<<<< HEAD
     let headerText5 = document.createTextNode("Condition");
+=======
+    let headerText5 = document.createTextNode("Conditions");
+>>>>>>> fc69e0c525e881136581f6a8235af56e7034e783
     headerCell5.appendChild(headerText5);
     headerRow.appendChild(headerCell5);
 
@@ -414,7 +442,7 @@ function displayDailyContent(response.s) {
     headerRow.appendChild(headerCell4);
 
     let headerCell5 = document.createElement("th");
-    let headerText5 = document.createTextNode("Rain");
+    let headerText5 = document.createTextNode("Conditions");
     headerCell5.appendChild(headerText5);
     headerRow.appendChild(headerCell5);
 
@@ -461,11 +489,12 @@ function displayDailyContent(response.s) {
 function displayImageContent(url) {
     let cityValue = getCityFormData();
     let stateValue = getStateFormData();
-    let imageDiv = document.getElementById("locationImage");
+    let imageDiv = document.getElementById("locationImageContainer");
     let imageHeader = document.createElement('h3');
     let imageHeaderText = document.createTextNode(cityValue + ', ' + stateValue);
     imageHeader.appendChild(imageHeaderText);
     let cityImage = document.createElement('img'); 
+    cityImage.id = 'locationImage';
     cityImage.src = url;
     imageDiv.appendChild(imageHeader);
     imageDiv.appendChild(cityImage);
@@ -513,13 +542,16 @@ function getCurrentIcon(response) {
 }
 
 function getCurrentTemp(response) {
-    tempFahrenheit = convertTemp(response.current.temp);
-    return tempFahrenheit;
+    return response.current.temp
 }
 
 function getCurrentWindSpeed(response) {
     windSpeed = response.current.wind_speed;
     return windSpeed;
+}
+
+function getTemperatureUnits() {
+
 }
 
 function getWindDegree(response) {
@@ -552,7 +584,7 @@ function clearWeatherAlerts() {
 }
 
 function clearImage() {
-    document.getElementById("locationImage").innerHTML = "";
+    document.getElementById("locationImageContainer").innerHTML = "";
 }
 
 function clearAllContent() {
@@ -611,6 +643,17 @@ function getHourlyWindDirection(hour, response) {
     return getWindDirection(windDegree);
 }
 
+function getServerURL() {
+    const serverURL = 'http://127.0.0.1:35351/api';
+    //const serverURL = 'http://localhost:35351/api';
+    //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
+    return serverURL
+}
+
+function getUnitOfMeasurement() {
+    return document.querySelector('input[name="units"]:checked').value
+}
+
 function convertTemp(kelvinTemp) {
     return 1.8*(kelvinTemp - 273) + 32;
 }
@@ -641,3 +684,20 @@ function convertMonth(month) {
 String.prototype.toProperCase = function () {
     return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 };
+
+function setCurrentUnits(units){
+    switch (units) {
+        case 'imperial':
+            temperatureUnits = String.fromCharCode(176) + 'F';
+            windSpeedUnits = 'Mph';
+            break;
+        case 'metric':
+            temperatureUnits = String.fromCharCode(176) + 'C';
+            windSpeedUnits = 'm/s';
+            break;
+        case 'standard':
+            temperatureUnits = 'K';
+            windSpeedUnits = 'm/s';
+            break;
+    }
+}
