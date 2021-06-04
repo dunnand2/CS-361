@@ -88,11 +88,14 @@ async function getWikipediaDOM(response) {
 function createResponseBody(dom) {
     // Query the main content of the wikipedia article
     let content = dom.window.document.getElementById("mw-content-text");
+    
     // Assign the URL of the first image. Since we queried the main content, this will be the most prominent image of the article
     let mainImage = content.getElementsByTagName("img")[0];
+    
     // Access first coordinate element and access data (all elements should have the same data)
     let latitude = dom.window.document.getElementsByClassName("latitude")[0].textContent;
     let longitude = dom.window.document.getElementsByClassName("longitude")[0].textContent;
+
     // package and return json data
     let body = JSON.stringify({
         lat: latitude.toString(),

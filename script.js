@@ -1,23 +1,24 @@
+const contentDiv = getMainContentContainer();
+const requestHeaders = {'Accept': 'application/json', 'Content-Type': 'application/json'};
+const searchButton = document.getElementById("Search");
+const currentTab = document.getElementById("currentTab");
+const hourlyTab = document.getElementById("hourlyTab");
+const dailyTab = document.getElementById("dailyTab");
+const radarTab = document.getElementById("radarTab");
+const weatherAlerts = document.getElementById("weatherAlerts");
 let currentActive = currentTab;
 let api_response = null;
 let current_lat = null;
 let current_long = null;
+let systemOfUnits = 'imperial';
 let temperatureUnits;
 let windSpeedUnits;
-var map;
-const contentDiv = getMainContentContainer();
-const requestHeaders = {'Accept': 'application/json', 'Content-Type': 'application/json'};
+let map;
+
 
 addEventListeners();
-//requestRadarData();
 
 function addEventListeners() {
-    const searchButton = document.getElementById("Search");
-    const currentTab = document.getElementById("currentTab");
-    const hourlyTab = document.getElementById("hourlyTab");
-    const dailyTab = document.getElementById("dailyTab");
-    const radarTab = document.getElementById("radarTab");
-
     searchButton.addEventListener("click", searchButtonClicked);
     currentTab.addEventListener("click", contentTabClicked);
     hourlyTab.addEventListener("click", contentTabClicked);
@@ -25,57 +26,38 @@ function addEventListeners() {
     radarTab.addEventListener("click", contentTabClicked);
 }
 
-async function testButtonClicked () {
-    const serverURL = 'http://flip3.engr.oregonstate.edu:35351/api/image-scraper';
-    let payload = JSON.stringify({wikiURL: "https://en.wikipedia.org/wiki/Chicago",})
-    let response = await fetch(serverURL, {method: 'POST', headers: requestHeaders, body: payload, mode: 'cors'});
-    let body =  await response.json();
-    let untransformedURL = "http:" + body.imageURL;
-    displayImageContent(untransformedURL);
-}
-
+async function searchButtonClicked() {
+    clearAllContent();
     let payload = createPayload();
-<<<<<<< HEAD
-    const serverURL = 'http://127.0.0.1:35351/api';
-    //const serverURL = 'http://localhost:35351/api';
-    //const serverURL = 'http://flip3.engr.oregonstate.edu:35351/'
-    let response = await fetch(serverURL, {method: 'POST', headers: requestHeaders, body: payload, mode: 'cors'});
-=======
     let serverURL = getServerURL();
-    let response = await fetch(serverURL, {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}, body: payload, mode: 'cors'});
->>>>>>> fc69e0c525e881136581f6a8235af56e7034e783
+    let response = await fetch(serverURL, {method: 'POST', headers: requestHeaders, body: payload, mode: 'cors'});
     if (!response.ok) {
         displayError(response);
         return
     }
     let body = await response.json();
-    let units = getUnitOfMeasurement();
-    setCurrentUnits(units);
-    let weatherData = await getWeatherData(body, units);
-    let untransformedURL = "http:" + body.imageURL;
+    updateSystemOfUnits();
+    let weatherData = await getWeatherData(body);
+    let untransformedURL = getUntransformedURL(body);
     let transformedURL = await transformFromURL(untransformedURL);
-    saveWeatherData(weatherData);
+    displayAllContent(weatherData, transformedURL);
+}
+
+function displayAllContent(weatherData, transformedURL) {
+    displayWeatherAlerts(weatherData);
     displayMainContent(weatherData, getActiveTab());
-    writeAlerts(weatherData);
     displayImageContent(transformedURL);
 }
 
-<<<<<<< HEAD
 async function getWeatherData(scrapedResponse) {
     // get lat and longitude from wikipedia HTML
     current_lat = convertLatitude(scrapedResponse.lat);
     current_long = convertLongitude(scrapedResponse.long);
-
-    // make API call with lat and long
-    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon='
-                         + current_long + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
-=======
-async function getWeatherData(scrapedResponse, units) {
-    current_lat = convertLatitude(scrapedResponse.lat);
-    current_long = convertLongitude(scrapedResponse.long);
-    let weatherResponse = await fetch('https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&units=' + units + '&appid=26725991df4a07c7462c67cf12165745', {mode: 'cors'});
->>>>>>> fc69e0c525e881136581f6a8235af56e7034e783
-    return weatherResponse.json();
+    let openWeatherRequestURL = createOpenWeatherURL();
+    let weatherResponse = await fetch(openWeatherRequestURL, {mode: 'cors'});
+    let weatherData = await weatherResponse.json()
+    saveWeatherData(weatherData);
+    return weatherData
 }
 
 function createRadarData() {
@@ -83,7 +65,7 @@ function createRadarData() {
     mapboxgl.accessToken = 'pk.eyJ1IjoiZHVubmFuZCIsImEiOiJja29zdGs5NGgwNDd3MzFvMTNiZGphMHhvIn0.ehUkvT41JA7bSKJVHKfVqA';
     map = new mapboxgl.Map({
         container: 'mainContentContainer',
-        style: 'mapbox://styles/mapbox/light-v10',
+        style: 'mapbox://styles/mapbox/streets-v11',
         zoom: 4,
         center: [current_long, current_lat]
     });
@@ -109,22 +91,13 @@ function addMapRadarLayer(map, layerType) {
       });
 }
 
-<<<<<<< HEAD
-function addRadioBox() {
+function addRadarRadioBox() {
     const formDiv = createRadioFormDiv()
     const radioForm = createRadioForm()
     addRadioItems(radioForm);
     formDiv.appendChild(radioForm)
     contentDiv.appendChild(formDiv);
 }
-=======
-function addRadarRadioBox() {
-    const mainContentContainer = document.getElementById("mainContentContainer");
-    const formDiv = document.createElement('div');
-    formDiv.id = "radioBoxDiv";
-    const radioForm = document.createElement('form');
-    radioForm.id = 'radioForm'
->>>>>>> fc69e0c525e881136581f6a8235af56e7034e783
 
 function addRadioItems(radiobox) {
     let buttons = ['precipitation', 'temp', 'pressure', 'clouds', 'wind'];
@@ -258,31 +231,45 @@ function getStateFormData() {
     return stateValue
 }
 
-function writeAlerts(response) {
-    let weatherAlerts = document.getElementById("Weather-alerts");
-    let alertHeader = document.createElement("h3");
-    let alertHeaderText = document.createTextNode("Weather Alerts");
-    alertHeader.appendChild(alertHeaderText);
-    weatherAlerts.appendChild(alertHeader);
+function displayWeatherAlerts(response) {
+    createAlertHeader();
     if (response.alerts != undefined) {
-        response.alerts.forEach(element => {
-            let alertLocation = document.createElement("p");
-            let alertLocationText = document.createTextNode(element.sender_name);
-            alertLocation.appendChild(alertLocationText);
-            weatherAlerts.appendChild(alertLocation);
-
-            let alertType = document.createElement("p");
-            let alertTypeText = document.createTextNode(element.event);
-            alertType.appendChild(alertTypeText);
-            weatherAlerts.appendChild(alertType);
-        });
+        writeAlerts(response.alerts);
     }
     else {
-        let noAlert = document.createElement("p");
-        let text = document.createTextNode("There are no current weather alerts for this location.");
-        noAlert.appendChild(text);
-        weatherAlerts.appendChild(noAlert);
+        writeNoAlert();
     }
+}
+
+function createAlertHeader(){
+    let alertHeader = createDOMElement("h3", "Weather Alerts");
+    weatherAlerts.appendChild(alertHeader);
+}
+
+function writeAlerts(alerts) {
+    alerts.forEach(element => {
+        // Create paragraph tag of alert location and append to weather alert div
+        let alertLocation = createDOMElement("p", element.sender_name);
+        weatherAlerts.appendChild(alertLocation);
+
+        // Create paragraph tag of alert type and append to weather alert div
+        let alertType = createDOMElement("p", element.event);
+        weatherAlerts.appendChild(alertType);
+    });
+}
+
+function writeNoAlert() {
+    let noAlert = createDOMElement("p", "There are no current weather alerts for this location.");
+    weatherAlerts.appendChild(noAlert);
+}
+
+function createDOMElement(elementType, text=null) {
+    let paragraph = document.createElement(elementType);
+    if (text != null) {
+        let paragraphText = document.createTextNode(text);
+        paragraph.appendChild(paragraphText);
+    }
+    return paragraph
 }
 
 function displayMainContent(response, activeTab) {
@@ -301,8 +288,7 @@ function displayMainContent(response, activeTab) {
 }
 
 function displayCurrentContent(response){
-
-    let contentDiv = document.getElementById("mainContentContainer");
+    //let currentHeader = createDOMElement("h2", "Current Conditions");
     let currentHeader = document.createElement("h2");
     let headerText = document.createTextNode("Current Conditions");
     currentHeader.appendChild(headerText);
@@ -367,11 +353,7 @@ function displayHourlyContent(response) {
 
     // Display hourly weather conditions
     let headerCell5 = document.createElement("th");
-<<<<<<< HEAD
-    let headerText5 = document.createTextNode("Condition");
-=======
     let headerText5 = document.createTextNode("Conditions");
->>>>>>> fc69e0c525e881136581f6a8235af56e7034e783
     headerCell5.appendChild(headerText5);
     headerRow.appendChild(headerCell5);
 
@@ -415,7 +397,7 @@ function displayHourlyContent(response) {
     contentDiv.appendChild(table);
 }
 
-function displayDailyContent(response.s) {
+function displayDailyContent(response) {
     let contentDiv = document.getElementById("mainContentContainer");
     let table = document.createElement("table");
     let header = document.createElement("thead");
@@ -554,6 +536,11 @@ function getTemperatureUnits() {
 
 }
 
+function getUntransformedURL(body) {
+    let untransformedURL = "http:" + body.imageURL;
+    return untransformedURL
+}
+
 function getWindDegree(response) {
     windDegree = response.current.wind_deg;
     return windDegree;
@@ -576,11 +563,11 @@ function contentTabClicked(e) {
 }
 
 function clearMainContent() {
-    document.getElementById("mainContentContainer").innerHTML = "";
+    contentDiv.innerHTML = "";
 }
 
 function clearWeatherAlerts() {
-    document.getElementById("Weather-alerts").innerHTML = "";
+    weatherAlerts.innerHTML = "";
 }
 
 function clearImage() {
@@ -591,6 +578,10 @@ function clearAllContent() {
     clearMainContent();
     clearWeatherAlerts();
     clearImage();
+}
+
+function createOpenWeatherURL(){
+    return 'https://api.openweathermap.org/data/2.5/onecall?lat=' + current_lat + '&lon=' + current_long + '&units=' + systemOfUnits + '&appid=26725991df4a07c7462c67cf12165745'
 }
 
 function getDailyRainfall(day, response) {
@@ -612,15 +603,12 @@ function getDate(day, response) {
 }
 
 function getDailyTemperature(day, response) {
-    let kelvinTemp = response.daily[day].temp.day;
-    let tempF = convertTemp(kelvinTemp);
-    return tempF;
+    return response.daily[day].temp.day;
 }
 
 function getHourlyTemperature(hour, response) {
-    let kelvinTemp = response.hourly[hour].temp;
-    let tempF = convertTemp(kelvinTemp);
-    return tempF;
+    return response.hourly[hour].temp;
+
 }
 
 function getDailyWindSpeed(day, response) {
@@ -685,8 +673,9 @@ String.prototype.toProperCase = function () {
     return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 };
 
-function setCurrentUnits(units){
-    switch (units) {
+function updateSystemOfUnits(){
+    systemOfUnits = getUnitOfMeasurement();
+    switch (systemOfUnits) {
         case 'imperial':
             temperatureUnits = String.fromCharCode(176) + 'F';
             windSpeedUnits = 'Mph';

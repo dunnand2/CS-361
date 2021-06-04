@@ -18,8 +18,8 @@
   <h1>Weather Forecast</h1>
   <h2>Enter a city and state below for a local weather forecast</h2>
   <div id="searchDiv">
-    <input id="searchForm" type="text" placeholder="Enter City Name">
-    <select id="stateDropDown">
+    <input id="searchForm" type="text" placeholder="Enter City Name" title="Enter the name of a U.S. city">
+    <select name="states" id="stateDropDown" title="Select a state">
       <option value="Alabama">Alabama</option>
       <option value="Alaska">Alaska</option>
       <option value="Arizona">Arizona</option>
@@ -36,7 +36,7 @@
       <option value="Illinois">Illinois</option>
       <option value="Indiana">Indiana</option>
       <option value="Iowa">Iowa</option>
-      <option value="KansasS">Kansas</option>
+      <option value="Kansas">Kansas</option>
       <option value="Kentucky">Kentucky</option>
       <option value="Louisiana">Louisiana</option>
       <option value="Maine">Maine</option>
@@ -82,7 +82,7 @@
     <label for="units">Standard</label>
   </div>
   <div class="grid-container">
-    <div id="Weather-alerts" class='contentContainer'> 
+    <div id="weatherAlerts" class='contentContainer'> 
     </div>
     <div id="mainContent">
       <nav>
