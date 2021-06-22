@@ -1,4 +1,4 @@
-# CS 361 - Weather App
+# Weather Forecast Web Application
 A weather web application that gets a weather report for a user entered city. A web scraper accesses the coordinates for the entered city from Wikipedia. These coordinates are used to request weather data from the openweathermap API. Supports current, hourly, and 7-day weather forecasts, as well as radar data imagery (built on mpabox and leaflet). An image of the city is also scraped from Wikipedia to be displayed alongside the weather report. 
 
 Additionally, the image scraper can be utilized as a standalone service via an API request.
